@@ -11,7 +11,7 @@ DIFFS=$(INPUTS:tests/in%=tests/diff%)
 .SECONDARY: $(OUTS)
 
 CXX=g++
-CXXFLAGS=-Wall -pedantic -O2 -std=c++17 -I ~/boost_1_80_0
+CXXFLAGS=-Wall -pedantic -O2 -std=c++17 -I C:\Users\roberto\Documents\USP\2022.2\MAC0328\boost_1_80_0
 RM=rm -fv
 DIFF=diff
 
