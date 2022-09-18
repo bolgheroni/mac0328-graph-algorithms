@@ -8,6 +8,7 @@
 #define BOOST_ALLOW_DEPRECATED_HEADERS // silence warnings
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
+#include <vector>                      // for std::vector
 
 typedef boost::adjacency_list<boost::vecS,
                               boost::vecS,
@@ -18,9 +19,9 @@ typedef boost::graph_traits<Arb>::vertex_descriptor Vertex;
    these objects are only accessed by the student's code */
 class HeadStart {
 public:
-  HeadStart(int info) : super_useful_info(info) {}
-private:
-  int super_useful_info;
+  HeadStart(int v_size): d(v_size), f(v_size) {}
+  std::vector<int> d;
+  std::vector<int> f;
 };
 
 #endif // #ifndef ARB_H
