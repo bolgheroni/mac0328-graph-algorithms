@@ -44,12 +44,11 @@ Digraph read_digraph(std::istream &in, int *ret_num_variables, int *ret_num_clau
 
   num_vertices = num_variables * 2;
 
-  Digraph dig(num_vertices);
-
   *ret_num_variables = num_variables;
   *ret_num_clauses = num_clauses;
 
-  std::cout << "Edges: " << "\n";
+  std::cout << "Edges: "
+            << "\n";
   // accumulate all data before graph construction
   std::vector<std::pair<int, int>> edges;
   while (num_clauses--)
@@ -73,8 +72,23 @@ Digraph read_digraph(std::istream &in, int *ret_num_variables, int *ret_num_clau
     edges.push_back(std::make_pair(u_2, v_2));
   }
 
-
   // guarantees copy elision in c++17
+  return Digraph(edges.cbegin(), edges.cend(), num_vertices);
+}
+
+Digraph reverse_digraph(Digraph &dig, typename boost::graph_traits<Digraph>::vertices_size_type num_vertices)
+{
+  // accumulate all data before graph construction
+  std::vector<std::pair<int, int>> edges;
+
+  std::for_each(boost::edges(dig).first,
+                boost::edges(dig).second,
+                [&](const auto &arc)
+                {
+                  auto sourceV =boost::source(arc, dig);
+                  auto targetV = boost::target(arc, dig);
+                  edges.push_back(std::make_pair(targetV, sourceV));
+                });
   return Digraph(edges.cbegin(), edges.cend(), num_vertices);
 }
 
@@ -126,9 +140,11 @@ int main(int argc, char **argv)
   {
     int num_variables, num_clauses;
     Digraph dig = read_digraph(std::cin, &num_variables, &num_clauses);
-    std::cout << "\nnum_variables = " << num_variables <<"\n";
-    std::cout << "num_clauses = " << num_clauses <<"\n";
-    HeadStart data = preprocess (dig, 0);
+    std::cout << "\nnum_variables = " << num_variables << "\n";
+    std::cout << "num_clauses = " << num_clauses << "\n";
+    HeadStart data = preprocess(dig, 0);
+
+    Digraph rev = reverse_digraph(dig, num_variables * 2);
 
     // size_t queries; std::cin >> queries;
 
