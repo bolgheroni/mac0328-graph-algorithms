@@ -69,8 +69,8 @@ Digraph read_digraph(std::istream &in, int *ret_num_variables, int *ret_num_clau
     b = -b;
     u_2 = a > 0 ? a - 1 : (-a - 1) + num_variables;
     v_2 = b > 0 ? b - 1 : (-b - 1) + num_variables;
-    std::cout << u_2 << " " << v_2 << "\n";
-    edges.push_back(std::make_pair(u_2, v_2));
+    std::cout << v_2 << " " << u_2 << "\n";
+    edges.push_back(std::make_pair(v_2, u_2));
   }
 
   // guarantees copy elision in c++17
