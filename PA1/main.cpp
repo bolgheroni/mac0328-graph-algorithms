@@ -21,9 +21,10 @@ typedef boost::graph_traits<Digraph>::vertex_descriptor Vertex;
 class HeadStart
 {
 public:
-  HeadStart(int v_size) : d(v_size), f(v_size) {}
+  HeadStart(int v_size) : d(v_size), f(v_size), byTime(v_size, -1) {}
   std::vector<int> d;
   std::vector<int> f;
+  std::vector<int> byTime;
 };
 
 enum Color
@@ -85,16 +86,19 @@ Digraph reverse_digraph(Digraph &dig, typename boost::graph_traits<Digraph>::ver
                 boost::edges(dig).second,
                 [&](const auto &arc)
                 {
-                  auto sourceV =boost::source(arc, dig);
+                  auto sourceV = boost::source(arc, dig);
                   auto targetV = boost::target(arc, dig);
                   edges.push_back(std::make_pair(targetV, sourceV));
                 });
   return Digraph(edges.cbegin(), edges.cend(), num_vertices);
 }
 
-int dfs(Digraph &dig, const Vertex &current, std::vector<int> &d, std::vector<int> &f, std::vector<int> &colours, int time)
+int dfs(Digraph &dig, const Vertex &current, std::vector<int> &d, std::vector<int> &f,
+        std::vector<int> &byTime, std::vector<int> &colours,
+        int time)
 {
   colours[current] = grey;
+  byTime[time] = current;
   d[current] = ++time;
   std::for_each(boost::out_edges(current, dig).first,
                 boost::out_edges(current, dig).second,
@@ -103,10 +107,48 @@ int dfs(Digraph &dig, const Vertex &current, std::vector<int> &d, std::vector<in
                   auto targetV = boost::target(arc, dig);
                   if (colours[targetV] == white)
                   {
-                    time = dfs(dig, targetV, d, f, colours, time);
+                    time = dfs(dig, targetV, d, f, byTime, colours, time);
                   }
                 });
   colours[current] = black;
+  f[current] = ++time;
+  return time;
+}
+
+int dfs_reverse(Digraph &dig, int num_variables, const Vertex &current,
+                std::vector<int> &d, std::vector<int> &f,
+                std::vector<int> &d_old, std::vector<int> &f_old,
+                std::vector<int> &colours, int time)
+{
+  colours[current] = grey;
+  d[current] = ++time;
+  int multiplier = 1;
+  if (current >= num_variables)
+    multiplier = -1;
+  std::for_each(boost::out_edges(current, dig).first,
+                boost::out_edges(current, dig).second,
+                [&](const auto &arc)
+                {
+                  auto targetV = boost::target(arc, dig);
+                  if (colours[targetV] == white)
+                  {
+                    // both literals for the same variable are in the same strong component
+                    if (targetV == current + num_variables * (multiplier))
+                    {
+                      std::cout << targetV << " and " << current << " are in same SC..." <<"\n";
+                      time = -1;
+                    }
+                    else
+                    {
+                      time = dfs_reverse(dig, num_variables, targetV, d, f, d_old, f_old, colours, time);
+                    }
+                  }
+                });
+  colours[current] = black;
+  if (time == -1)
+  {
+    return -1;
+  }
   f[current] = ++time;
   return time;
 }
@@ -123,8 +165,34 @@ HeadStart preprocess(Digraph &dig, const Vertex &root)
   std::cout << "n of vertices = " << v_length << "\n";
   auto ret = HeadStart(v_length);
   std::vector<int> colours(v_length, white);
-  dfs(dig, root, ret.d, ret.f, colours, 0);
+  dfs(dig, root, ret.d, ret.f, ret.byTime, colours, 0);
   return ret;
+}
+
+int check_validity(Digraph &rev, int num_variables,
+                   std::vector<int> &d_old, std::vector<int> &f_old,
+                   std::vector<int> &byTime)
+{
+  std::vector<int> colours(num_variables * 2, white);
+  std::vector<int> d(num_variables * 2, white);
+  std::vector<int> f(num_variables * 2, white);
+  int time = 0;
+  for (int i = 0; i < num_variables * 2; i++)
+  {
+    if (colours[byTime[i]] == white)
+    {
+      time = dfs_reverse(rev, num_variables, byTime[i],
+                         d, f,
+                         d_old, f_old,
+                         colours, time) -
+             1;
+      if (time < 0)
+      {
+        return -1;
+      }
+    }
+  }
+  return 1;
 }
 
 int main(int argc, char **argv)
@@ -140,12 +208,10 @@ int main(int argc, char **argv)
   {
     int num_variables, num_clauses;
     Digraph dig = read_digraph(std::cin, &num_variables, &num_clauses);
-    std::cout << "\nnum_variables = " << num_variables << "\n";
-    std::cout << "num_clauses = " << num_clauses << "\n";
     HeadStart data = preprocess(dig, 0);
 
     Digraph rev = reverse_digraph(dig, num_variables * 2);
-
+    std::cout << "\nResult from validity check: " << check_validity(rev, num_variables, data.d, data.f, data.byTime) << "\n";
     // size_t queries; std::cin >> queries;
 
     // while(queries--) {
