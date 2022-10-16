@@ -135,7 +135,8 @@ int dfs_reverse(Digraph &dig, int num_variables, const Vertex &current,
                     // both literals for the same variable are in the same strong component
                     if (targetV == current + num_variables * (multiplier))
                     {
-                      std::cout << targetV << " and " << current << " are in same SC..." <<"\n";
+                      std::cout << targetV << " and " << current << " are in same SC..."
+                                << "\n";
                       time = -1;
                     }
                     else
@@ -162,10 +163,15 @@ HeadStart preprocess(Digraph &dig, const Vertex &root)
                 {
                   v_length++;
                 });
-  std::cout << "n of vertices = " << v_length << "\n";
   auto ret = HeadStart(v_length);
   std::vector<int> colours(v_length, white);
-  dfs(dig, root, ret.d, ret.f, ret.byTime, colours, 0);
+  std::for_each(boost::vertices(dig).first,
+                boost::vertices(dig).second,
+                [&](const auto &vertex)
+                {
+                  if (colours[vertex] == white)
+                    dfs(dig, vertex, ret.d, ret.f, ret.byTime, colours, 0);
+                });
   return ret;
 }
 
