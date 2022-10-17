@@ -25,6 +25,7 @@ public:
   std::vector<int> d;
   std::vector<int> f;
   std::vector<int> by_f_time;
+  int latest_f_time;
 };
 
 enum Color
@@ -98,8 +99,7 @@ int dfs(Digraph &dig, const Vertex &current, std::vector<int> &d, std::vector<in
         int time, int *current_f_time)
 {
   colours[current] = grey;
-  by_f_time[*current_f_time] = current;
-  *current_f_time = *current_f_time + 1;
+
   d[current] = ++time;
   std::for_each(boost::out_edges(current, dig).first,
                 boost::out_edges(current, dig).second,
@@ -113,6 +113,8 @@ int dfs(Digraph &dig, const Vertex &current, std::vector<int> &d, std::vector<in
                 });
   colours[current] = black;
   f[current] = ++time;
+  by_f_time[*current_f_time] = current;
+  *current_f_time = *current_f_time + 1;
   return time;
 }
 
@@ -195,18 +197,19 @@ HeadStart preprocess(Digraph &dig, const Vertex &root)
                   if (colours[vertex] == white)
                     time = dfs(dig, vertex, ret.d, ret.f, ret.by_f_time, colours, time, &current_f_time);
                 });
+  ret.latest_f_time = current_f_time - 1;
   return ret;
 }
 
 int check_validity(Digraph &rev, int num_variables,
                    std::vector<int> &d_old, std::vector<int> &f_old,
-                   std::vector<int> &by_f_time)
+                   std::vector<int> &by_f_time, int latest_f_time)
 {
   std::vector<int> colours(num_variables * 2, white);
   std::vector<int> d(num_variables * 2, white);
   std::vector<int> f(num_variables * 2, white);
   int time = 0;
-  for (int i = 0; i < num_variables * 2; i++)
+  for (int i = latest_f_time; i >= 0; i--)
   {
     if (colours[by_f_time[i]] == white)
     {
@@ -258,7 +261,7 @@ int main(int argc, char **argv)
     HeadStart data = preprocess(dig, 0);
 
     Digraph rev = reverse_digraph(dig, num_variables * 2);
-    std::cout << "\nResult from validity check: " << check_validity(rev, num_variables, data.d, data.f, data.by_f_time) << "\n";
+    std::cout << "\nResult from validity check: " << check_validity(rev, num_variables, data.d, data.f, data.by_f_time, data.latest_f_time) << "\n";
     // size_t queries; std::cin >> queries;
 
     // while(queries--) {
