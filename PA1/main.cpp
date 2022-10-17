@@ -181,7 +181,7 @@ std::vector<int> find_components(Digraph &rev, int num_variables,
   return components;
 }
 
-void reach_visit(Digraph& dig, const Vertex &v, std::vector<int> &d_to_u, std::vector<int> &preds, int current_d)
+void reach_visit(Digraph &dig, const Vertex &v, std::vector<int> &d_to_u, std::vector<int> &preds, int current_d)
 {
   std::for_each(boost::out_edges(v, dig).first,
                 boost::out_edges(v, dig).second,
@@ -199,26 +199,31 @@ void reach_visit(Digraph& dig, const Vertex &v, std::vector<int> &d_to_u, std::v
 
 void print_path(const Vertex &u, const Vertex &v, std::vector<int> &preds, int num_variables)
 {
-  std::string output(std::to_string(v));
-  Vertex current = preds[v];
-  while (current != u)
+  std::string output("");
+  int current = v;
+  bool printed_first = false;
+  while (current != -1)
   {
-    // int current_display = current + 1;
-    // if (current - num_variables >= 0){
-    //   current_display = -(current);
-    // }
-    int current_display = current;
-    output = std::to_string(current_display) + " " + output;
+    int current_display = current + 1;
+    if (current - num_variables >= 0)
+    {
+      current_display = (current - num_variables)*(-1) - 1;
+    }
+    // output = "(" + std::to_string(current) + ", " + std::to_string(current_display) + ", " + std::to_string(current - num_variables) + ") " + output;
+    if (printed_first) {
+      output = " " + output;
+    }
+    output = std::to_string(current_display) + output;
     current = preds[current];
+    printed_first = true;
   }
-  output = std::to_string(u) + " " + output;
   std::cout << output << "\n";
 }
 
 void build_and_print_path(const Vertex &u, const Vertex &v, int num_variables, Digraph &dig)
 {
-  std::vector<int> distance_to_u(num_variables*2, -1);
-  std::vector<int> preds(num_variables*2, -1);
+  std::vector<int> distance_to_u(num_variables * 2, -1);
+  std::vector<int> preds(num_variables * 2, -1);
   distance_to_u[u] = 0;
   reach_visit(dig, u, distance_to_u, preds, 0);
 
@@ -241,6 +246,8 @@ int check_validity(std::vector<int> &components, int num_variables, Digraph &dig
       u = i;
       v = i + num_variables;
       std::cout << "NO"
+                << "\n"
+                << u + 1
                 << "\n";
       build_and_print_path(u, v, num_variables, dig);
       build_and_print_path(v, u, num_variables, dig);
