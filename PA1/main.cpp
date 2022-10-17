@@ -197,10 +197,9 @@ int main(int argc, char **argv)
 {
   int debugLevel;
   std::cin >> debugLevel;
-  std::cout << debugLevel << "\n";
   if (debugLevel != 0)
   {
-    std::cout << "finish\n";
+    // std::cout << "finish\n";
   }
   else
   {
@@ -210,7 +209,12 @@ int main(int argc, char **argv)
 
     Digraph rev = reverse_digraph(dig, num_variables * 2);
     std::vector<int> components = find_components(rev, num_variables, data.by_f_time, data.latest_f_time);
-    std::cout << "\nResult from components finding:" << check_validity(components, num_variables) << "\n";
+    int validity = check_validity(components, num_variables);
+    if (validity == 1) {
+      std::cout << "YES" << "\n";
+    } else {
+      std::cout << "NO";
+    }
   }
   return EXIT_SUCCESS;
 }
