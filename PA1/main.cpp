@@ -95,10 +95,11 @@ Digraph reverse_digraph(Digraph &dig, typename boost::graph_traits<Digraph>::ver
 
 int dfs(Digraph &dig, const Vertex &current, std::vector<int> &d, std::vector<int> &f,
         std::vector<int> &by_f_time, std::vector<int> &colours,
-        int time)
+        int time, int *current_f_time)
 {
   colours[current] = grey;
-  by_f_time[time] = current;
+  by_f_time[*current_f_time] = current;
+  *current_f_time = *current_f_time + 1;
   d[current] = ++time;
   std::for_each(boost::out_edges(current, dig).first,
                 boost::out_edges(current, dig).second,
@@ -107,7 +108,7 @@ int dfs(Digraph &dig, const Vertex &current, std::vector<int> &d, std::vector<in
                   auto targetV = boost::target(arc, dig);
                   if (colours[targetV] == white)
                   {
-                    time = dfs(dig, targetV, d, f, by_f_time, colours, time);
+                    time = dfs(dig, targetV, d, f, by_f_time, colours, time, current_f_time);
                   }
                 });
   colours[current] = black;
@@ -184,13 +185,15 @@ HeadStart preprocess(Digraph &dig, const Vertex &root)
                   v_length++;
                 });
   auto ret = HeadStart(v_length);
+  int time = 0;
+  int current_f_time = 0;
   std::vector<int> colours(v_length, white);
   std::for_each(boost::vertices(dig).first,
                 boost::vertices(dig).second,
                 [&](const auto &vertex)
                 {
                   if (colours[vertex] == white)
-                    dfs(dig, vertex, ret.d, ret.f, ret.by_f_time, colours, 0);
+                    time = dfs(dig, vertex, ret.d, ret.f, ret.by_f_time, colours, time, &current_f_time);
                 });
   return ret;
 }
