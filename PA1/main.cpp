@@ -49,8 +49,8 @@ Digraph read_digraph(std::istream &in, int *ret_num_variables, int *ret_num_clau
   *ret_num_variables = num_variables;
   *ret_num_clauses = num_clauses;
 
-  std::cout << "Edges: "
-            << "\n";
+  // std::cout << "Edges: "
+            // << "\n";
   // accumulate all data before graph construction
   std::vector<std::pair<int, int>> edges;
   while (num_clauses--)
@@ -58,19 +58,19 @@ Digraph read_digraph(std::istream &in, int *ret_num_variables, int *ret_num_clau
     int a, b;
     int u_1, v_1, u_2, v_2;
     in >> a >> b;
-    std::cout << "From clause: (" << a << ", " << b << ")\n";
+    // std::cout << "From clause: (" << a << ", " << b << ")\n";
     a = -a;
     u_1 = a > 0 ? (a - 1) : (-a - 1 + num_variables);
     v_1 = b > 0 ? (b - 1) : (-b - 1 + num_variables);
-    std::cout << "Made edges: ";
-    std::cout << u_1 << " " << v_1 << " and ";
+    // std::cout << "Made edges: ";
+    // std::cout << u_1 << " " << v_1 << " and ";
     edges.push_back(std::make_pair(u_1, v_1));
 
     a = -a;
     b = -b;
     u_2 = a > 0 ? a - 1 : (-a - 1) + num_variables;
     v_2 = b > 0 ? b - 1 : (-b - 1) + num_variables;
-    std::cout << v_2 << " " << u_2 << "\n";
+    // std::cout << v_2 << " " << u_2 << "\n";
     edges.push_back(std::make_pair(v_2, u_2));
   }
 
@@ -158,8 +158,8 @@ int dfs_reverse(Digraph &dig, int num_variables, const Vertex &current,
                     // both literals for the same variable are in the same strong component
                     if (targetV == current + num_variables * (multiplier))
                     {
-                      std::cout << targetV << " and " << current << " are in same SC..."
-                                << "\n";
+                      // std::cout << targetV << " and " << current << " are in same SC..."
+                      //           << "\n";
                       time = -1;
                     }
                     else
@@ -228,12 +228,12 @@ int check_validity(Digraph &rev, int num_variables,
 }
 
 std::vector<int> find_components(Digraph &rev, int num_variables,
-                                 std::vector<int> &by_f_time, int lastTimeMarked)
+                                 std::vector<int> &by_f_time, int latest_f_time)
 {
   std::vector<int> colours(num_variables * 2, white);
   std::vector<int> components(num_variables * 2, white);
   int currentComponent = 0;
-  for (int i = lastTimeMarked; i >= 0; i--)
+  for (int i = latest_f_time; i >= 0; i--)
   {
     if (colours[by_f_time[i]] == white)
     {
@@ -262,13 +262,19 @@ int main(int argc, char **argv)
 
     Digraph rev = reverse_digraph(dig, num_variables * 2);
     std::cout << "\nResult from validity check: " << check_validity(rev, num_variables, data.d, data.f, data.by_f_time, data.latest_f_time) << "\n";
-    // size_t queries; std::cin >> queries;
-
-    // while(queries--) {
-    //   Vertex x, y; std::cin >> x >> y;
-    //   std::cout << (is_ancestor (--x, --y, data) ? "YES" : "NO")
-    //             << std::endl;
-    // }
+    std::vector<int> components = find_components(rev, num_variables, data.by_f_time, data.latest_f_time);
+    std::cout << "\nResult from components finding: \n";
+    int validity = 1;
+    for (int i = 0; i <= num_variables; i++)
+    {
+      // std::cout << "i = " << i << ", comp = " << components[i] << "\n";
+      // std::cout << "i- = " << i + num_variables << ", comp = " << components[i + num_variables] << "\n\n";
+      if (components[i] == components[i + num_variables])
+      {
+        validity = -1;
+      }
+    }
+    std::cout << "Validity: " << validity << "\n";
   }
   return EXIT_SUCCESS;
 }
