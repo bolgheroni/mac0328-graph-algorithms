@@ -115,6 +115,26 @@ int dfs(Digraph &dig, const Vertex &current, std::vector<int> &d, std::vector<in
   return time;
 }
 
+void dfs_sc(Digraph &dig, int num_variables, const Vertex &current,
+            std::vector<int> &colours, std::vector<int> &components,
+            int currentComponent)
+{
+  colours[current] = grey;
+  components[current] = currentComponent;
+
+  std::for_each(boost::out_edges(current, dig).first,
+                boost::out_edges(current, dig).second,
+                [&](const auto &arc)
+                {
+                  auto targetV = boost::target(arc, dig);
+                  if (colours[targetV] == white)
+                  {
+                    dfs_sc(dig, num_variables, targetV, colours, components, currentComponent);
+                  }
+                });
+  colours[current] = black;
+}
+
 int dfs_reverse(Digraph &dig, int num_variables, const Vertex &current,
                 std::vector<int> &d, std::vector<int> &f,
                 std::vector<int> &d_old, std::vector<int> &f_old,
@@ -199,6 +219,24 @@ int check_validity(Digraph &rev, int num_variables,
     }
   }
   return 1;
+}
+
+std::vector<int> find_components(Digraph &rev, int num_variables,
+                                 std::vector<int> &byTime, int lastTimeMarked)
+{
+  std::vector<int> colours(num_variables * 2, white);
+  std::vector<int> components(num_variables * 2, white);
+  int currentComponent = 0;
+  for (int i = lastTimeMarked; i >= 0; i--)
+  {
+    if (colours[byTime[i]] == white)
+    {
+      dfs_sc(rev, num_variables, byTime[i],
+             colours, components, currentComponent);
+      currentComponent += 1;
+    }
+  }
+  return components;
 }
 
 int main(int argc, char **argv)
