@@ -21,10 +21,10 @@ typedef boost::graph_traits<Digraph>::vertex_descriptor Vertex;
 class HeadStart
 {
 public:
-  HeadStart(int v_size) : d(v_size), f(v_size), byTime(v_size, -1) {}
+  HeadStart(int v_size) : d(v_size), f(v_size), by_f_time(v_size, -1) {}
   std::vector<int> d;
   std::vector<int> f;
-  std::vector<int> byTime;
+  std::vector<int> by_f_time;
 };
 
 enum Color
@@ -94,11 +94,11 @@ Digraph reverse_digraph(Digraph &dig, typename boost::graph_traits<Digraph>::ver
 }
 
 int dfs(Digraph &dig, const Vertex &current, std::vector<int> &d, std::vector<int> &f,
-        std::vector<int> &byTime, std::vector<int> &colours,
+        std::vector<int> &by_f_time, std::vector<int> &colours,
         int time)
 {
   colours[current] = grey;
-  byTime[time] = current;
+  by_f_time[time] = current;
   d[current] = ++time;
   std::for_each(boost::out_edges(current, dig).first,
                 boost::out_edges(current, dig).second,
@@ -107,7 +107,7 @@ int dfs(Digraph &dig, const Vertex &current, std::vector<int> &d, std::vector<in
                   auto targetV = boost::target(arc, dig);
                   if (colours[targetV] == white)
                   {
-                    time = dfs(dig, targetV, d, f, byTime, colours, time);
+                    time = dfs(dig, targetV, d, f, by_f_time, colours, time);
                   }
                 });
   colours[current] = black;
@@ -190,14 +190,14 @@ HeadStart preprocess(Digraph &dig, const Vertex &root)
                 [&](const auto &vertex)
                 {
                   if (colours[vertex] == white)
-                    dfs(dig, vertex, ret.d, ret.f, ret.byTime, colours, 0);
+                    dfs(dig, vertex, ret.d, ret.f, ret.by_f_time, colours, 0);
                 });
   return ret;
 }
 
 int check_validity(Digraph &rev, int num_variables,
                    std::vector<int> &d_old, std::vector<int> &f_old,
-                   std::vector<int> &byTime)
+                   std::vector<int> &by_f_time)
 {
   std::vector<int> colours(num_variables * 2, white);
   std::vector<int> d(num_variables * 2, white);
@@ -205,9 +205,9 @@ int check_validity(Digraph &rev, int num_variables,
   int time = 0;
   for (int i = 0; i < num_variables * 2; i++)
   {
-    if (colours[byTime[i]] == white)
+    if (colours[by_f_time[i]] == white)
     {
-      time = dfs_reverse(rev, num_variables, byTime[i],
+      time = dfs_reverse(rev, num_variables, by_f_time[i],
                          d, f,
                          d_old, f_old,
                          colours, time) -
@@ -222,16 +222,16 @@ int check_validity(Digraph &rev, int num_variables,
 }
 
 std::vector<int> find_components(Digraph &rev, int num_variables,
-                                 std::vector<int> &byTime, int lastTimeMarked)
+                                 std::vector<int> &by_f_time, int lastTimeMarked)
 {
   std::vector<int> colours(num_variables * 2, white);
   std::vector<int> components(num_variables * 2, white);
   int currentComponent = 0;
   for (int i = lastTimeMarked; i >= 0; i--)
   {
-    if (colours[byTime[i]] == white)
+    if (colours[by_f_time[i]] == white)
     {
-      dfs_sc(rev, num_variables, byTime[i],
+      dfs_sc(rev, num_variables, by_f_time[i],
              colours, components, currentComponent);
       currentComponent += 1;
     }
@@ -255,7 +255,7 @@ int main(int argc, char **argv)
     HeadStart data = preprocess(dig, 0);
 
     Digraph rev = reverse_digraph(dig, num_variables * 2);
-    std::cout << "\nResult from validity check: " << check_validity(rev, num_variables, data.d, data.f, data.byTime) << "\n";
+    std::cout << "\nResult from validity check: " << check_validity(rev, num_variables, data.d, data.f, data.by_f_time) << "\n";
     // size_t queries; std::cin >> queries;
 
     // while(queries--) {
