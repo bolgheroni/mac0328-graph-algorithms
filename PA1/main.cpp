@@ -180,19 +180,39 @@ std::vector<int> find_components(Digraph &rev, int num_variables,
   return components;
 }
 
-int check_validity(std::vector<int> &components, int num_variables)
+void print_path(const Vertex &u, const Vertex &v, Digraph &Digraph)
+{
+  // TODO print path length
+  // TODO print path
+}
+
+void print_assignment(std::vector<int> &components, int num_variables, Digraph &dig)
+{
+  // TODO print assignment
+}
+
+int check_validity(std::vector<int> &components, int num_variables, Digraph &dig)
 {
   for (int i = 0; i <= num_variables; i++)
   {
-    // std::cout << "i = " << i << ", comp = " << components[i] << "\n";
-    // std::cout << "i- = " << i + num_variables << ", comp = " << components[i + num_variables] << "\n\n";
     if (components[i] == components[i + num_variables])
     {
+      int u, v;
+      u = i;
+      v = i + num_variables;
+      std::cout << "NO"
+                << "\n";
+      print_path(u, v, dig);
+      print_path(v, u, dig);
       return -1;
     }
   }
+  std::cout << "YES"
+            << "\n";
+  print_assignment(components, num_variables, dig);
   return 1;
 }
+
 int main(int argc, char **argv)
 {
   int debugLevel;
@@ -209,12 +229,7 @@ int main(int argc, char **argv)
 
     Digraph rev = reverse_digraph(dig, num_variables * 2);
     std::vector<int> components = find_components(rev, num_variables, data.by_f_time, data.latest_f_time);
-    int validity = check_validity(components, num_variables);
-    if (validity == 1) {
-      std::cout << "YES" << "\n";
-    } else {
-      std::cout << "NO";
-    }
+    check_validity(components, num_variables, dig);
   }
   return EXIT_SUCCESS;
 }
