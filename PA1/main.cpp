@@ -164,7 +164,7 @@ HeadStart preprocess(Digraph &dig, const Vertex &root)
 }
 
 std::vector<int> find_components(Digraph &rev, int num_variables,
-                                 std::vector<int> &by_f_time, int latest_f_time)
+                                 std::vector<int> &by_f_time, int latest_f_time, int *num_components)
 {
   std::vector<int> colours(num_variables * 2, white);
   std::vector<int> components(num_variables * 2, white);
@@ -178,6 +178,7 @@ std::vector<int> find_components(Digraph &rev, int num_variables,
       currentComponent += 1;
     }
   }
+  *num_components = currentComponent;
   return components;
 }
 
@@ -207,10 +208,11 @@ void print_path(const Vertex &u, const Vertex &v, std::vector<int> &preds, int n
     int current_display = current + 1;
     if (current - num_variables >= 0)
     {
-      current_display = (current - num_variables)*(-1) - 1;
+      current_display = (current - num_variables) * (-1) - 1;
     }
     // output = "(" + std::to_string(current) + ", " + std::to_string(current_display) + ", " + std::to_string(current - num_variables) + ") " + output;
-    if (printed_first) {
+    if (printed_first)
+    {
       output = " " + output;
     }
     output = std::to_string(current_display) + output;
@@ -231,12 +233,87 @@ void build_and_print_path(const Vertex &u, const Vertex &v, int num_variables, D
   print_path(u, v, preds, num_variables);
 }
 
-void print_assignment(std::vector<int> &components, int num_variables, Digraph &dig)
+Digraph condensed_digraph(std::vector<int> &components, int num_variables, int num_components, Digraph &dig)
 {
-  // TODO print assignment
+  std::vector<std::pair<int, int>> edges;
+  std::for_each(boost::vertices(dig).first,
+                boost::vertices(dig).second,
+                [&](const auto &vertex)
+                {
+                  std::for_each(boost::out_edges(vertex, dig).first,
+                                boost::out_edges(vertex, dig).second,
+                                [&](const auto &arc)
+                                {
+                                  // reverse condensed digraph
+                                  auto compSource = components[vertex];
+                                  auto compTarget = components[boost::target(arc, dig)];
+                                  auto edge = std::make_pair(compSource, compTarget);
+                                  // std::cout << "Make pair " << compSource << ", " << compTarget << "\n";
+                                  if (compTarget != compSource)
+                                  {
+
+                                    edges.push_back(edge);
+                                  }
+                                });
+                });
+  // guarantees copy elision in c++17
+  return Digraph(edges.cbegin(), edges.cend(), num_components);
+}
+void make_assignment(int component, std::vector<int> &components, int num_components, std::vector<int> &assign, int num_variables, Digraph &rev_condensed)
+{
+  // std::cout << "assignin on component " << component << "\n";
+  bool has_assignment = false;
+  // traverse all digraph do find vertices from this component and check wether they were already assigned
+  for (int i = 0; i < num_variables; i++)
+  {
+    // if there is a variable with a literal in this component that already has been assigned
+    if ((components[i] == component || components[i + num_variables] == component) && assign[i] != -1)
+    {
+      has_assignment = true;
+      break;
+    }
+  }
+  if (!has_assignment)
+  {
+    // mark literals from current component positive
+    for (int i = 0; i < num_variables; i++)
+    {
+      if (components[i] == component)
+      {
+        // std::cout << "assignin 1 on var " << i + 1 << "\n";
+        assign[i] = 1;
+      }
+    }
+    for (int i = num_variables; i < num_variables * 2; i++)
+    {
+      if (components[i] == component)
+      {
+        // std::cout << "assignin 0 on var " << i + 1 - num_variables << "\n";
+        assign[i - num_variables] = 0;
+      }
+    }
+    // mark literals from opposite component negative ??
+  }
+  
 }
 
-int check_validity(std::vector<int> &components, int num_variables, Digraph &dig)
+void print_assignment(std::vector<int> &components, int num_variables, int num_components, Digraph &dig)
+{
+  Digraph condensed = condensed_digraph(components, num_variables, num_components, dig);
+  std::vector<int> assign(num_variables, -1);
+
+  for (int i = num_components - 1; i >= 0; i--)
+  {
+    make_assignment(i, components, num_components, assign, num_variables, condensed);
+  }
+  // print assign
+  for (int i = 0; i < num_variables; i++)
+  {
+    std::cout << assign[i] << " ";
+  }
+}
+
+int check_validity(std::vector<int> &components, int num_variables, int num_components, Digraph &dig)
 {
   for (int i = 0; i <= num_variables; i++)
   {
@@ -256,7 +333,8 @@ int check_validity(std::vector<int> &components, int num_variables, Digraph &dig
   }
   std::cout << "YES"
             << "\n";
-  print_assignment(components, num_variables, dig);
+
+  print_assignment(components, num_variables, num_components, dig);
   return 1;
 }
 
@@ -270,13 +348,13 @@ int main(int argc, char **argv)
   }
   else
   {
-    int num_variables, num_clauses;
+    int num_variables, num_clauses, num_components;
     Digraph dig = read_digraph(std::cin, &num_variables, &num_clauses);
     HeadStart data = preprocess(dig, 0);
 
     Digraph rev = reverse_digraph(dig, num_variables * 2);
-    std::vector<int> components = find_components(rev, num_variables, data.by_f_time, data.latest_f_time);
-    check_validity(components, num_variables, dig);
+    std::vector<int> components = find_components(rev, num_variables, data.by_f_time, data.latest_f_time, &num_components);
+    check_validity(components, num_variables, num_components, dig);
   }
   return EXIT_SUCCESS;
 }
