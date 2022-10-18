@@ -1,8 +1,3 @@
-/* This is the driver. Code similar to this will be used for grading.
- * It may be edited by the students for testing purposes, however it
- * WILL NOT be submitted as part of the assignment.
- */
-
 #include <iostream>
 #define BOOST_ALLOW_DEPRECATED_HEADERS // silence warnings
 #include <boost/graph/graph_traits.hpp>
