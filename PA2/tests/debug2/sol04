@@ -1,0 +1,15 @@
+bridge[1,5] = false
+bridge[1,7] = false
+bridge[2,3] = false
+bridge[2,6] = false
+bridge[3,9] = false
+bridge[4,2] = false
+bridge[5,9] = false
+bridge[6,4] = false
+bridge[6,5] = false
+bridge[7,8] = false
+bridge[8,1] = false
+bridge[9,1] = false
+bridge[9,2] = false
+bridge[9,10] = false
+bridge[10,5] = false

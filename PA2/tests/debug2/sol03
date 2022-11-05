@@ -1,0 +1,9 @@
+bridge[1,2] = false
+bridge[2,3] = false
+bridge[3,4] = false
+bridge[1,4] = false
+bridge[5,6] = false
+bridge[6,7] = false
+bridge[7,8] = false
+bridge[5,8] = false
+bridge[2,8] = true
