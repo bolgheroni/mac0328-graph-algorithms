@@ -12,7 +12,7 @@ OUTS1=$(INPUTS:tests/in%=tests/debug1/out%)
 OUTS2=$(INPUTS:tests/in%=tests/debug2/out%)
 
 CXX=g++
-CXXFLAGS=-Wall -pedantic -O2 -std=c++17 -I $(BOOST_ROOT)
+CXXFLAGS=-Wall -pedantic -O2 -std=c++17 -I $${BOOST_PATH}
 RM=rm -fv
 DIFF=diff
 
