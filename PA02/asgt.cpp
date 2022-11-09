@@ -13,8 +13,8 @@ typedef boost::detail::edge_desc_impl<boost::undirected_tag, std::size_t> edge;
 // TODO update logic from stack o vertices to stack of edges, because that's what we're interessed in
 // OR maybe use this logic to find cutvertices and from there find the bcc's
 void dfs(Graph &g, Vertex u,
-         std::vector<int> &pred,
-         std::stack<int> &v_stack, std::stack<edge> &e_stack,
+         std::vector<size_t> &pred,
+         std::stack<size_t> &v_stack, std::stack<edge> &e_stack,
          int *bcc_amount,
          bool u_is_root,
          int time)
@@ -28,7 +28,7 @@ void dfs(Graph &g, Vertex u,
 
   for (const auto &e : boost::make_iterator_range(boost::out_edges(u, g)))
   {
-    int v = boost::target(e, g);
+    size_t v = boost::target(e, g);
     if (g[v].colour == white)
     {
       e_stack.push(e);
@@ -120,8 +120,8 @@ void compute_bcc(Graph &g, bool fill_cutvxs, bool fill_bridges)
     g[edge].bridge = false;
   }
   // predecessors array and vertices stack
-  std::vector<int> pred(v_length, -1);
-  std::stack<int> v_stack;
+  std::vector<size_t> pred(v_length, -1);
+  std::stack<size_t> v_stack;
   std::stack<edge> e_stack;
 
   // amount of biconnected components and algorithm 'time'
