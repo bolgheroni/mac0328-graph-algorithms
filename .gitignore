@@ -3,3 +3,9 @@
 .vscode/*
 
 *.ignore
+
+out*
+
+*.d
+*.exe
+*.o
