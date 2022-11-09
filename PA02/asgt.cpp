@@ -39,18 +39,30 @@ void dfs(Graph &g, Vertex u,
       g[u].low = g[u].low < g[v].low ? g[u].low : g[v].low;
       if (g[v].low >= g[u].d)
       {
+        
         g[u].cutvertex = true;
+
+        // a
+        *bcc_amount = *bcc_amount + 1;
+        edge w = e_stack.top();
+        e_stack.pop();
+        while (w != e)
+        {
+          g[w].bcc = *bcc_amount;
+          w = e_stack.top();
+          e_stack.pop();
+        }
+        g[w].bcc = *bcc_amount;
+        // b
         if (g[v].low != g[u].d)
         {
           g[e].bridge = true;
-          *bcc_amount = *bcc_amount + 1;
-          g[e].bcc = *bcc_amount;
         }
       }
     }
     else
-      // if it is a back edge and doesnt point to the predecessor of u
-      if (v != pred[u] && g[v].in_stack == true)
+      // if it is a back edge and doesnt just point back to the predecessor of u
+      if (v != pred[u] && g[v].colour == grey && g[v].in_stack == true)
       {
         e_stack.push(e);
 
@@ -73,25 +85,6 @@ void dfs(Graph &g, Vertex u,
       v = v_stack.top();
       v_stack.pop();
       g[v].in_stack = false;
-    }
-    if (descendantsAmount > 0)
-    {
-      *bcc_amount = *bcc_amount + 1;
-      edge e = e_stack.top();
-      e_stack.pop();
-      if (!g[e].bridge)
-      {
-        g[e].bcc = *bcc_amount;
-      }
-      while (!e_stack.empty())
-      {
-        e = e_stack.top();
-        e_stack.pop();
-        if (!g[e].bridge)
-        {
-          g[e].bcc = *bcc_amount;
-        }
-      }
     }
   }
   if (u_is_root)
