@@ -12,7 +12,8 @@ enum Color
 // OR maybe use this logic to find cutvertices and from there find the bcc's
 void dfs(Graph &g, Vertex u,
          std::vector<int> &pred,
-         std::stack<int> &v_stack, int *bcc_amount,
+         std::stack<int> &v_stack, std::stack<std::pair<int, int>> &e_stack,
+         int *bcc_amount,
          bool isRoot,
          int time)
 {
@@ -29,10 +30,11 @@ void dfs(Graph &g, Vertex u,
     {
       descendantsAmount += 1;
       pred[v] = u;
-      dfs(g, v, pred, v_stack, bcc_amount, false, time);
+      dfs(g, v, pred, v_stack, e_stack, bcc_amount, false, time);
       // low[u] = min(low[u], low[v])
       g[u].low = g[u].low < g[v].low ? g[u].low : g[v].low;
-      if(g[v].low >= g[u].d) {
+      if (g[v].low >= g[u].d)
+      {
         g[u].cutvertex = true;
       }
     }
@@ -79,9 +81,16 @@ void compute_bcc(Graph &g, bool fill_cutvxs, bool fill_bridges)
     g[vertex].cutvertex = false;
     v_length += 1;
   }
+
+  for (const auto &edge : boost::make_iterator_range(boost::edges(g)))
+  {
+    g[edge].bcc = 0;
+    g[edge].bridge = false;
+  }
   // predecessors array and vertices stack
   std::vector<int> pred(v_length, -1);
   std::stack<int> v_stack;
+  std::stack<std::pair<int, int>> e_stack;
 
   // amount of biconnected components and algorithm 'time'
   int bcc_amount = 0;
@@ -90,7 +99,7 @@ void compute_bcc(Graph &g, bool fill_cutvxs, bool fill_bridges)
   {
     if (g[u].colour == white)
     {
-      dfs(g, u, pred, v_stack, &bcc_amount, true, time);
+      dfs(g, u, pred, v_stack, e_stack, &bcc_amount, true, time);
     }
   }
 }
