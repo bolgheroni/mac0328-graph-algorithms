@@ -1,3 +1,5 @@
 *.tar*
 
 .vscode/*
+
+*.ignore
