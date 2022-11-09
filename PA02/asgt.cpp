@@ -10,8 +10,20 @@ enum Color
 
 typedef boost::detail::edge_desc_impl<boost::undirected_tag, std::size_t> edge;
 
-// TODO update logic from stack o vertices to stack of edges, because that's what we're interessed in
-// OR maybe use this logic to find cutvertices and from there find the bcc's
+void pop_and_mark_edges(const edge &start_edge, std::stack<edge> &e_stack, Graph &g, int *bcc_amount)
+{
+  *bcc_amount = *bcc_amount + 1;
+  edge w = e_stack.top();
+  e_stack.pop();
+  while (w != start_edge)
+  {
+    g[w].bcc = *bcc_amount;
+    w = e_stack.top();
+    e_stack.pop();
+  }
+  g[w].bcc = *bcc_amount;
+}
+
 void dfs(Graph &g, Vertex u,
          std::vector<size_t> &pred,
          std::stack<size_t> &v_stack, std::stack<edge> &e_stack,
@@ -24,7 +36,7 @@ void dfs(Graph &g, Vertex u,
   g[u].low = g[u].d;
   v_stack.push(u);
   g[u].in_stack = true;
-  int descendantsAmount = 0;
+  int descendants_amount = 0;
 
   for (const auto &e : boost::make_iterator_range(boost::out_edges(u, g)))
   {
@@ -32,28 +44,17 @@ void dfs(Graph &g, Vertex u,
     if (g[v].colour == white)
     {
       e_stack.push(e);
-      descendantsAmount += 1;
+      descendants_amount += 1;
       pred[v] = u;
       dfs(g, v, pred, v_stack, e_stack, bcc_amount, false, time);
       // low[u] = min(low[u], low[v])
       g[u].low = g[u].low < g[v].low ? g[u].low : g[v].low;
       if (g[v].low >= g[u].d)
       {
-        
-        g[u].cutvertex = true;
 
-        // a
-        *bcc_amount = *bcc_amount + 1;
-        edge w = e_stack.top();
-        e_stack.pop();
-        while (w != e)
-        {
-          g[w].bcc = *bcc_amount;
-          w = e_stack.top();
-          e_stack.pop();
-        }
-        g[w].bcc = *bcc_amount;
-        // b
+        pop_and_mark_edges(e, e_stack, g, bcc_amount);
+
+        g[u].cutvertex = true;
         if (g[v].low != g[u].d)
         {
           g[e].bridge = true;
@@ -75,7 +76,6 @@ void dfs(Graph &g, Vertex u,
   if (g[u].d == g[u].low)
   {
 
-    // TODO pop vertices until 'u' is popped, and for each popped vertex, assing it's scc val to scc_amount
     size_t v = v_stack.top();
     v_stack.pop();
     g[v].in_stack = false;
@@ -89,7 +89,7 @@ void dfs(Graph &g, Vertex u,
   }
   if (u_is_root)
   {
-    g[u].cutvertex = descendantsAmount >= 2;
+    g[u].cutvertex = descendants_amount >= 2;
   }
 }
 
