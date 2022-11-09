@@ -11,6 +11,10 @@
  * debug level. */
 struct BundledVertex {
   bool cutvertex;
+  size_t d;
+  size_t f;
+  size_t colour;
+  size_t low;
 };
 
 /* Students may add any number of fields and methods to this struct;

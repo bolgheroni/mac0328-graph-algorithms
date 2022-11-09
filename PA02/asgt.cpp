@@ -9,64 +9,68 @@ enum Color
 };
 
 // TODO update logic from stack o vertices to stack of edges, because that's what we're interessed in
-// OR maybe use this logic to find cutvertices and from there find the bcc's 
-void dfs(Graph &g, Vertex u, std::vector<int> &colours,
-         std::vector<int> &d, std::vector<int> &f, std::vector<int> &low,
-         std::vector<int> &pred, 
+// OR maybe use this logic to find cutvertices and from there find the bcc's
+void dfs(Graph &g, Vertex u,
+         std::vector<int> &pred,
          std::stack<int> &v_stack, int *bcc_amount,
          int time)
 {
-  colours[u] = grey;
-  d[u] = ++time;
-  low[u] = d[u];
+  g[u].colour = grey;
+  g[u].d = ++time;
+  g[u].low = g[u].d;
   v_stack.push(u);
   for (const auto &e : boost::make_iterator_range(boost::out_edges(u, g)))
   {
     int v = boost::target(e, g);
-    if (colours[v] == white){
+    if (g[v].colour == white)
+    {
       pred[v] = u;
-      dfs(g, v, colours, d, f, low, pred, v_stack, bcc_amount, time);
+      dfs(g, v, pred, v_stack, bcc_amount, time);
       // low[u] = min(low[u], low[v])
-      low[u] = low[u] < low[v] ? low[u] : low[v]; 
-
-    }else 
-      // TODO check if it is a back arc 
-      if (false) {
-        // low[u] = min(low[u], d[v])
-        low[u] = low[u] < d[v] ? low[u] : d[v];
+      g[u].low = g[u].low < g[v].low ? g[u].low : g[v].low;
     }
+    else
+      // TODO check if it is a back arc
+      if (false)
+      {
+        // low[u] = min(low[u], d[v])
+        g[u].low = g[u].low < g[v].d ? g[u].low : g[v].d;
+      }
   }
-  colours[u] = black;
-  f[u] = ++time;
+  g[u].colour = black;
+  g[u].f = ++time;
   // TODO check if its a base vertex
-  if (false) {
+  if (false)
+  {
     *bcc_amount = *bcc_amount + 1;
     // TODO pop vertices until 'u' is popped, and for each popped vertex, assing it's scc val to scc_amount
   }
-
 }
 
 void compute_bcc(Graph &g, bool fill_cutvxs, bool fill_bridges)
 {
   int v_length = 0;
+  // initializing bundled vertices props and counting amount of vertices
   for (const auto &vertex : boost::make_iterator_range(boost::vertices(g)))
   {
+    g[vertex].colour = white;
+    g[vertex].d = -1;
+    g[vertex].f = -1;
+    g[vertex].low = -1;
     v_length += 1;
   }
-  std::vector<int> colours(v_length, white);
-  std::vector<int> d(v_length, -1);
-  std::vector<int> f(v_length, -1);
-  std::vector<int> low(v_length, -1);
+  // predecessors array and vertices stack
   std::vector<int> pred(v_length, -1);
   std::stack<int> v_stack;
 
+  // amount of biconnected components and algorithm 'time'
   int bcc_amount = 0;
   int time = 0;
   for (const auto &u : boost::make_iterator_range(boost::vertices(g)))
   {
-    if (colours[u] == white)
+    if (g[u].colour == white)
     {
-      dfs(g, u, colours, d, f, low, pred, v_stack, &bcc_amount, time);
+      dfs(g, u, pred, v_stack, &bcc_amount, time);
     }
   }
 }
