@@ -8,6 +8,8 @@ enum Color
   black
 };
 
+typedef boost::detail::edge_desc_impl<boost::undirected_tag, std::size_t> edge;
+
 // TODO update logic from stack o vertices to stack of edges, because that's what we're interessed in
 // OR maybe use this logic to find cutvertices and from there find the bcc's
 void dfs(Graph &g, Vertex u,
@@ -23,6 +25,7 @@ void dfs(Graph &g, Vertex u,
   v_stack.push(u);
   g[u].in_stack = true;
   int descendantsAmount = 0;
+
   for (const auto &e : boost::make_iterator_range(boost::out_edges(u, g)))
   {
     int v = boost::target(e, g);
@@ -36,6 +39,8 @@ void dfs(Graph &g, Vertex u,
       if (g[v].low >= g[u].d)
       {
         g[u].cutvertex = true;
+        if (g[v].low != g[u].d)
+          g[e].bridge = true;
       }
     }
     else
