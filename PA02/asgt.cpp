@@ -20,6 +20,7 @@ void dfs(Graph &g, Vertex u,
   g[u].d = ++time;
   g[u].low = g[u].d;
   v_stack.push(u);
+  g[u].in_stack = true;
   int descendantsAmount = 0;
   for (const auto &e : boost::make_iterator_range(boost::out_edges(u, g)))
   {
@@ -31,10 +32,13 @@ void dfs(Graph &g, Vertex u,
       dfs(g, v, pred, v_stack, bcc_amount, false, time);
       // low[u] = min(low[u], low[v])
       g[u].low = g[u].low < g[v].low ? g[u].low : g[v].low;
+      if(g[v].low >= g[u].d) {
+        g[u].cutvertex = true;
+      }
     }
     else
       // if it is a back edge and doesnt point to the predecessor of u
-      if (g[v].colour == grey && v != pred[u])
+      if (v != pred[u] && g[v].in_stack == true)
       {
         // low[u] = min(low[u], d[v])
         g[u].low = g[u].low < g[v].d ? g[u].low : g[v].d;
@@ -46,8 +50,16 @@ void dfs(Graph &g, Vertex u,
   {
     *bcc_amount = *bcc_amount + 1;
     // TODO pop vertices until 'u' is popped, and for each popped vertex, assing it's scc val to scc_amount
+    size_t v = v_stack.top();
+    v_stack.pop();
+    g[v].in_stack = false;
+    while (v != u)
+    {
+      v = v_stack.top();
+      v_stack.pop();
+      g[v].in_stack = false;
+    }
   }
-
   if (isRoot)
   {
     g[u].cutvertex = descendantsAmount >= 2;
@@ -64,6 +76,7 @@ void compute_bcc(Graph &g, bool fill_cutvxs, bool fill_bridges)
     g[vertex].d = -1;
     g[vertex].f = -1;
     g[vertex].low = -1;
+    g[vertex].cutvertex = false;
     v_length += 1;
   }
   // predecessors array and vertices stack

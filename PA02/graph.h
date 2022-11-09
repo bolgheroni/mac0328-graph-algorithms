@@ -15,6 +15,7 @@ struct BundledVertex {
   size_t f;
   size_t colour;
   size_t low;
+  bool in_stack;
 };
 
 /* Students may add any number of fields and methods to this struct;
