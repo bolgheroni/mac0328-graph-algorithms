@@ -13,25 +13,28 @@ enum Color
 void dfs(Graph &g, Vertex u,
          std::vector<int> &pred,
          std::stack<int> &v_stack, int *bcc_amount,
+         bool isRoot,
          int time)
 {
   g[u].colour = grey;
   g[u].d = ++time;
   g[u].low = g[u].d;
   v_stack.push(u);
+  int descendantsAmount = 0;
   for (const auto &e : boost::make_iterator_range(boost::out_edges(u, g)))
   {
     int v = boost::target(e, g);
     if (g[v].colour == white)
     {
+      descendantsAmount += 1;
       pred[v] = u;
-      dfs(g, v, pred, v_stack, bcc_amount, time);
+      dfs(g, v, pred, v_stack, bcc_amount, false, time);
       // low[u] = min(low[u], low[v])
       g[u].low = g[u].low < g[v].low ? g[u].low : g[v].low;
     }
     else
-      // TODO check if it is a back arc
-      if (false)
+      // if it is a back edge and doesnt point to the predecessor of u
+      if (g[v].colour == grey && v != pred[u])
       {
         // low[u] = min(low[u], d[v])
         g[u].low = g[u].low < g[v].d ? g[u].low : g[v].d;
@@ -39,11 +42,15 @@ void dfs(Graph &g, Vertex u,
   }
   g[u].colour = black;
   g[u].f = ++time;
-  // TODO check if its a base vertex
-  if (false)
+  if (g[u].d == g[u].low)
   {
     *bcc_amount = *bcc_amount + 1;
     // TODO pop vertices until 'u' is popped, and for each popped vertex, assing it's scc val to scc_amount
+  }
+
+  if (isRoot)
+  {
+    g[u].cutvertex = descendantsAmount >= 2;
   }
 }
 
@@ -70,7 +77,7 @@ void compute_bcc(Graph &g, bool fill_cutvxs, bool fill_bridges)
   {
     if (g[u].colour == white)
     {
-      dfs(g, u, pred, v_stack, &bcc_amount, time);
+      dfs(g, u, pred, v_stack, &bcc_amount, true, time);
     }
   }
 }
