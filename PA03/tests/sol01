@@ -1,0 +1,4 @@
+Negative cycle found with cost [...]
+Cycle = [...]
+Loophole found with yield 2
+Cycle = (vx1) --[arc +2]-> (vx2) --[arc +0.5]-> (vx3) --[arc +0.5]-> (vx4) --[arc +4]-> (vx1)
