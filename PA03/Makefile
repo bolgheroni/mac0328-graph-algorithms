@@ -11,7 +11,7 @@ OUTS=$(INPUTS:tests/in%=tests/out%)
 .SECONDARY: $(OUTS)
 
 CXX=g++
-CXXFLAGS=-Wall -pedantic -O2 -std=c++17 -I $(BOOST_ROOT)
+CXXFLAGS=-Wall -pedantic -O2 -std=c++17 -I $${BOOST_PATH}
 RM=rm -fv
 
 COMPILE.cpp = $(CXX) $(CXXFLAGS)
