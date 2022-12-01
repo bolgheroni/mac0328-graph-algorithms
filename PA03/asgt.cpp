@@ -22,7 +22,7 @@ using boost::num_vertices;
 using boost::out_edges;
 using std::vector;
 
-Digraph build_digraph(const Digraph& market)
+Digraph build_digraph(const Digraph &market)
 {
   /* placeholder for NRVO */
   Digraph digraph(num_vertices(market));
@@ -31,11 +31,15 @@ Digraph build_digraph(const Digraph& market)
    * execution pathways */
 
   /* create arcs 01 and 10 */
-  Arc a0, a1;
+  Arc a0, a1, a2;
   std::tie(a0, std::ignore) = add_edge(0, 1, digraph);
   digraph[a0].cost = 11.0;
-  std::tie(a1, std::ignore) = add_edge(1, 0, digraph);
+
+  std::tie(a1, std::ignore) = add_edge(1, 2, digraph);
   digraph[a1].cost = -17.0;
+
+  std::tie(a2, std::ignore) = add_edge(2, 0, digraph);
+  digraph[a2].cost = -17.0;
 
   return digraph;
 }
