@@ -57,22 +57,42 @@ has_negative_cycle(Digraph &digraph)
   }
 
   std::vector<int> d_l_v(n_vertices, INFINITY);
-
+  // d_(l-1)_v
+  std::vector<int> d_l_1_v(n_vertices, INFINITY);
+  d_l_1_v[0] = 0;
   d_l_v[0] = 0;
 
-  for (int l = 1; l <= 1; l++)
+  for (int l = 1; l <= n_vertices; l++)
   {
     for (const auto &vertex : boost::make_iterator_range(boost::vertices(digraph)))
     {
-      // d_l_v[vertex] = d_(l-1)_v[vertex];
+      d_l_1_v[vertex] = d_l_v[vertex];
+    }
+    for (const auto &vertex : boost::make_iterator_range(boost::vertices(digraph)))
+    {
+      d_l_v[vertex] = d_l_1_v[vertex];
       std::cout << "Edge " << vertex + 1 << "\n";
-      // had to reverse the edges source and target in order to use "in_edges"
+      // had to reverse the edges source and target in order to use out_edges as "in_edges"
       for (const auto &edge : boost::make_iterator_range(boost::out_edges(vertex, digraph)))
       {
-        std::cout << boost::target(edge, digraph) + 1 << ", " << boost::source(edge, digraph) + 1 << "\n";
+        // the boost::target is the source, sadly, due to the edges inversion
+        auto source = boost::target(edge, digraph);
+
+        std::cout << source + 1 << ", " << vertex + 1 << "\n";
+        if (d_l_v[vertex] > d_l_1_v[source] + digraph[edge].cost)
+        {
+          d_l_v[vertex] = d_l_1_v[source] + digraph[edge].cost;
+          if (l == n_vertices)
+          {
+            std::cout << "Neg cycle at " << vertex + 1 << "\n";
+            return {true, boost::none, boost::none};
+          }
+        }
       }
     }
   }
+  std::cout << "No Neg cycle "
+               "\n";
   return {false, boost::none, boost::none};
 }
 
