@@ -1,6 +1,6 @@
 #include "asgt.h"
 
-#include <utility>              // for std::get
+#include <utility> // for std::get
 #include <tuple>
 #include <vector>
 
@@ -32,13 +32,13 @@ Digraph build_digraph(const Digraph &market)
 
   /* create arcs 01 and 10 */
   Arc a0, a1, a2;
-  std::tie(a0, std::ignore) = add_edge(0, 1, digraph);
+  std::tie(a0, std::ignore) = add_edge(1, 0, digraph);
   digraph[a0].cost = 11.0;
 
-  std::tie(a1, std::ignore) = add_edge(1, 2, digraph);
+  std::tie(a1, std::ignore) = add_edge(2, 1, digraph);
   digraph[a1].cost = -17.0;
 
-  std::tie(a2, std::ignore) = add_edge(2, 0, digraph);
+  std::tie(a2, std::ignore) = add_edge(0, 2, digraph);
   digraph[a2].cost = -17.0;
 
   return digraph;
@@ -47,39 +47,42 @@ Digraph build_digraph(const Digraph &market)
 std::tuple<bool,
            boost::optional<NegativeCycle>,
            boost::optional<FeasiblePotential>>
-has_negative_cycle(Digraph& digraph)
+has_negative_cycle(Digraph &digraph)
 {
-  const Arc& a0 = *(out_edges(0, digraph).first);
-  const Arc& a1 = *(out_edges(1, digraph).first);
+  int n_vertices = 0;
 
-  Walk walk(digraph, 0);
-  walk.extend(a0);
-  walk.extend(a1);
+  for (const auto &vertex : boost::make_iterator_range(boost::vertices(digraph)))
+  {
+    n_vertices += 1;
+  }
 
-  /* Replace `NegativeCycle(walk)` with `boost::none` in the next
-   * command to trigger "negative cycle reported but not computed".
-   * Comment the whole `return` and uncomment the remaining lines to
-   * exercise construction of a feasible potential. */
+  std::vector<int> d_l_v(n_vertices, INFINITY);
 
-  // encourage RVO
-  return {true, NegativeCycle(walk), boost::none};
+  d_l_v[0] = 0;
 
-  /* Replace `FeasiblePotential(digraph, y)` with `boost::none` in the
-   * next command to trigger "feasible potential reported but not
-   * computed". */
-
-  // encourage RVO
-  vector<double> y(num_vertices(digraph), 0.0);
-  return {false, boost::none, FeasiblePotential(digraph, y)};
+  for (int l = 1; l <= 1; l++)
+  {
+    for (const auto &vertex : boost::make_iterator_range(boost::vertices(digraph)))
+    {
+      // d_l_v[vertex] = d_(l-1)_v[vertex];
+      std::cout << "Edge " << vertex + 1 << "\n";
+      // had to reverse the edges source and target in order to use "in_edges"
+      for (const auto &edge : boost::make_iterator_range(boost::out_edges(vertex, digraph)))
+      {
+        std::cout << boost::target(edge, digraph) + 1 << ", " << boost::source(edge, digraph) + 1 << "\n";
+      }
+    }
+  }
+  return {false, boost::none, boost::none};
 }
 
-Loophole build_loophole(const NegativeCycle& negcycle,
-                        const Digraph& aux_digraph,
-                        const Digraph& market)
+Loophole build_loophole(const NegativeCycle &negcycle,
+                        const Digraph &aux_digraph,
+                        const Digraph &market)
 {
   /* bogus code */
-  const Arc& b0 = *(out_edges(0, market).first);
-  const Arc& b1 = *(out_edges(1, market).first);
+  const Arc &b0 = *(out_edges(0, market).first);
+  const Arc &b1 = *(out_edges(1, market).first);
 
   Walk w(market, 0);
   w.extend(b0);
@@ -89,9 +92,9 @@ Loophole build_loophole(const NegativeCycle& negcycle,
   return Loophole(w);
 }
 
-FeasibleMultiplier build_feasmult(const FeasiblePotential& feaspot,
-                                  const Digraph& aux_digraph,
-                                  const Digraph& market)
+FeasibleMultiplier build_feasmult(const FeasiblePotential &feaspot,
+                                  const Digraph &aux_digraph,
+                                  const Digraph &market)
 {
   vector<double> z(num_vertices(market), 1.0);
 
