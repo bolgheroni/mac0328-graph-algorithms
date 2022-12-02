@@ -69,9 +69,24 @@ Digraph reverse_digraph(Digraph &dig, typename boost::graph_traits<Digraph>::ver
   return reverse;
 }
 
-void print_walk(std::vector<int> walk)
+void print_walk(std::vector<std::pair<int, int>> walk, int n_vertices)
 {
-  for (int vertex : walk)
+  std::vector<int> passed_vertices(n_vertices);
+  std::vector<int> cycle;
+  for (std::pair<int, int> pair : walk)
+  {
+    passed_vertices[pair.first] = 1;
+    cycle.push_back(pair.first);
+    std::cout << pair.first + 1 << " -> " << pair.second + 1 << " ";
+
+    if (passed_vertices[pair.second] == 1)
+    {
+      cycle.push_back(pair.second);
+      std::cout << "\n";
+      break;
+    }
+  }
+  for (int vertex : cycle)
   {
     std::cout << vertex + 1 << " ";
   }
@@ -95,11 +110,8 @@ has_negative_cycle(Digraph &digraph)
   // d_(l-1)_v
   std::vector<int> d_l_1_v(n_vertices, INFINITY);
 
-  std::vector<int> w_l_v[n_vertices];
-  std::vector<int> w_l_1_v[n_vertices];
-
-  w_l_v[0].push_back(0);
-  w_l_1_v[0].push_back(0);
+  std::vector<std::pair<int, int>> w_l_v[n_vertices];
+  std::vector<std::pair<int, int>> w_l_1_v[n_vertices];
 
   d_l_1_v[0] = 0;
   d_l_v[0] = 0;
@@ -128,12 +140,12 @@ has_negative_cycle(Digraph &digraph)
         {
           d_l_v[vertex] = d_l_1_v[source] + cost;
           w_l_v[vertex] = w_l_1_v[source];
-          w_l_v[vertex].push_back(vertex);
+          w_l_v[vertex].push_back(std::make_pair(source, vertex));
 
           if (l == n_vertices)
           {
             std::cout << "Neg cycle at " << vertex + 1 << "\n";
-            print_walk(w_l_v[vertex]);
+            print_walk(w_l_v[vertex], n_vertices);
             return {true, boost::none, boost::none};
           }
         }
