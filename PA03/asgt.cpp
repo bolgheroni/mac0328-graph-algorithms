@@ -69,6 +69,15 @@ Digraph reverse_digraph(Digraph &dig, typename boost::graph_traits<Digraph>::ver
   return reverse;
 }
 
+void print_walk(std::vector<int> walk)
+{
+  for (int vertex : walk)
+  {
+    std::cout << vertex + 1 << " ";
+  }
+  std::cout << "\n";
+}
+
 std::tuple<bool,
            boost::optional<NegativeCycle>,
            boost::optional<FeasiblePotential>>
@@ -85,6 +94,13 @@ has_negative_cycle(Digraph &digraph)
   std::vector<int> d_l_v(n_vertices, INFINITY);
   // d_(l-1)_v
   std::vector<int> d_l_1_v(n_vertices, INFINITY);
+
+  std::vector<int> w_l_v[n_vertices];
+  std::vector<int> w_l_1_v[n_vertices];
+
+  w_l_v[0].push_back(0);
+  w_l_1_v[0].push_back(0);
+
   d_l_1_v[0] = 0;
   d_l_v[0] = 0;
 
@@ -93,10 +109,12 @@ has_negative_cycle(Digraph &digraph)
     for (const auto &vertex : boost::make_iterator_range(boost::vertices(reverse)))
     {
       d_l_1_v[vertex] = d_l_v[vertex];
+      w_l_1_v[vertex] = w_l_v[vertex];
     }
     for (const auto &vertex : boost::make_iterator_range(boost::vertices(reverse)))
     {
       d_l_v[vertex] = d_l_1_v[vertex];
+      w_l_v[vertex] = w_l_1_v[vertex];
       std::cout << "Vertex " << vertex + 1 << "\n";
       // had to reverse the digraph's edges source and target ends in order to use out_edges as "in_edges"
       for (const auto &edge : boost::make_iterator_range(boost::out_edges(vertex, reverse)))
@@ -109,9 +127,13 @@ has_negative_cycle(Digraph &digraph)
         if (d_l_v[vertex] > d_l_1_v[source] + cost)
         {
           d_l_v[vertex] = d_l_1_v[source] + cost;
+          w_l_v[vertex] = w_l_1_v[source];
+          w_l_v[vertex].push_back(vertex);
+
           if (l == n_vertices)
           {
             std::cout << "Neg cycle at " << vertex + 1 << "\n";
+            print_walk(w_l_v[vertex]);
             return {true, boost::none, boost::none};
           }
         }
