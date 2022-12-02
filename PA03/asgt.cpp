@@ -3,6 +3,7 @@
 #include <utility> // for std::get
 #include <tuple>
 #include <vector>
+#include <stack>
 
 #define BOOST_ALLOW_DEPRECATED_HEADERS // silence warnings
 #include <boost/graph/adjacency_list.hpp>
@@ -69,27 +70,40 @@ Digraph reverse_digraph(Digraph &dig, typename boost::graph_traits<Digraph>::ver
   return reverse;
 }
 
-std::vector<int> find_cicle(int vertex, std::vector<int> pi)
+NegativeCycle find_cicle(int vertex, std::vector<std::pair<int, int>> pi_n_cost, Digraph &digraph)
 {
-  std::vector<int> cycle;
+  std::stack<int> path;
+  int current = vertex;
+  bool done = false;
 
-  cycle.push_back(vertex);
-  int current = pi[vertex];
-  std::cout << vertex + 1 << " ";
-  while (pi[current] != vertex)
+  while (!done || current != vertex)
   {
-    cycle.push_back(current);
-    current = pi[current];
+    done = true;
+    // std::cout << current + 1 << " ";
+    path.push(current);
+    current = pi_n_cost[current].first;
   }
-  cycle.push_back(current);
+  path.push(current);
+  std::cout << current + 1 << "\n";
 
-  for (int i = cycle.size() - 1; i >= 0; i--)
+  Walk wk(digraph, vertex);
+
+  current = path.top();
+  path.pop();
+  while (!path.empty())
   {
-    std::cout << cycle[i] + 1 << " ";
-  }
-  std::cout << "\n";
+    int next = path.top();
+    path.pop();
+    // std::cout << current + 1 << " ";
+    Arc a;
+    std::tie(a, std::ignore) = boost::edge(current, next, digraph);
 
-  return cycle;
+    wk.extend(a);
+    current = next;
+  }
+  // std::cout << current + 1 << "\n";
+  NegativeCycle cy(wk);
+  return cy;
 }
 
 std::tuple<bool,
@@ -109,9 +123,10 @@ has_negative_cycle(Digraph &digraph)
   // d_(l-1)_v
   std::vector<int> d_l_1_v(n_vertices, INFINITY);
 
-  std::vector<int> pi(n_vertices);
+  std::vector<std::pair<int, int>> pi_n_cost(n_vertices);
 
-  pi[0] = 0;
+  pi_n_cost[0].first = 0;
+  pi_n_cost[0].second = 0;
 
   d_l_1_v[0] = 0;
   d_l_v[0] = 0;
@@ -137,13 +152,14 @@ has_negative_cycle(Digraph &digraph)
         if (d_l_v[vertex] > d_l_1_v[source] + cost)
         {
           d_l_v[vertex] = d_l_1_v[source] + cost;
-          pi[vertex] = source;
+          pi_n_cost[vertex].first = source;
+          pi_n_cost[vertex].second = cost;
 
           if (l == n_vertices)
           {
             std::cout << "Neg cycle at " << vertex + 1 << "\n";
-            std::vector<int> cycle = find_cicle(vertex, pi);
-            return {true, boost::none, boost::none};
+            NegativeCycle cycle = find_cicle(vertex, pi_n_cost, digraph);
+            return {true, cycle, boost::none};
           }
         }
       }
