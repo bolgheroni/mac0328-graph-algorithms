@@ -37,7 +37,7 @@ Digraph build_digraph(const Digraph &market)
                   auto targetV = boost::target(arc, market);
                   Arc a;
                   std::tie(a, std::ignore) = boost::add_edge(sourceV, targetV, digraph);
-                  digraph[a].cost = (-1) * log10(market[arc].cost);
+                  digraph[a].cost = (-1) * log(market[arc].cost);
                 });
   return digraph;
 }
@@ -198,18 +198,9 @@ FeasibleMultiplier build_feasmult(const FeasiblePotential &feaspot,
   vector<double> z(num_vertices(market), 1.0);
   for (size_t i = 0; i < num_vertices(market); i++)
   {
-    // Arc a;
-    // std::tie(a, std::ignore) = boost::edge(aux_digraph[i].pi, i, market);
-
-    // z[i] = pow(10, (-1) * feaspot.potential()[i]) * market[a].cost;
-    // double arc_cost = i != aux_digraph[i].pi ? market[a].cost : 1;
-    // std::cout << "cost: " << i + 1 << "<= ("
-    //           << arc_cost
-    //           << ") <= " << aux_digraph[i].pi + 1 << "\n";
-
     double fsI = feaspot.potential()[i];
     // std::cout << "fsM: " << pow(10, 1 * fsI) * arc_cost << "\n";
-    z[i] = pow(10, (-1) * fsI);
+    z[i] = exp((-1) * fsI);
   }
 
   return FeasibleMultiplier(market, z);
