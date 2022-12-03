@@ -13,6 +13,8 @@
 #include "digraph.h"
 #include "potential.h"
 
+#include <math.h>
+
 /* The code in this template file is all "bogus". It just illustrates
  * how to return answers back to main.cpp. */
 
@@ -28,28 +30,16 @@ Digraph build_digraph(const Digraph &market)
   /* placeholder for NRVO */
   Digraph digraph(num_vertices(market));
 
-  /* flip some signs in the arc costs below to exercise the many
-   * execution pathways */
-
-  /* create arcs 01 and 10 */
-  Arc a0, a1, a2, a3, a4;
-
-  std::tie(a4, std::ignore) = add_edge(0, 3, digraph);
-  digraph[a4].cost = 3.0;
-
-  std::tie(a3, std::ignore) = add_edge(3, 1, digraph);
-  digraph[a3].cost = 9.0;
-
-  // THE NEG CYCLE
-  std::tie(a0, std::ignore) = add_edge(0, 1, digraph);
-  digraph[a0].cost = 11.0;
-
-  std::tie(a1, std::ignore) = add_edge(1, 2, digraph);
-  digraph[a1].cost = -17.0;
-
-  std::tie(a2, std::ignore) = add_edge(2, 0, digraph);
-  digraph[a2].cost = -17.0;
-
+  std::for_each(boost::edges(market).first,
+                boost::edges(market).second,
+                [&](const auto &arc)
+                {
+                  auto sourceV = boost::source(arc, market);
+                  auto targetV = boost::target(arc, market);
+                  Arc a;
+                  std::tie(a, std::ignore) = boost::add_edge(sourceV, targetV, digraph);
+                  digraph[a].cost = (-1) * log10(market[arc].cost);
+                });
   return digraph;
 }
 
