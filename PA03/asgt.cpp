@@ -101,17 +101,12 @@ std::tuple<bool,
            boost::optional<FeasiblePotential>>
 has_negative_cycle(Digraph &digraph)
 {
-  int n_vertices = 0;
-
-  for (const auto &vertex : boost::make_iterator_range(boost::vertices(digraph)))
-  {
-    n_vertices += 1;
-  }
+  int n_vertices = num_vertices(digraph);
   Digraph reverse = reverse_digraph(digraph, n_vertices);
 
-  std::vector<int> d_l_v(n_vertices, INFINITY);
+  std::vector<double> d_l_v(n_vertices, std::numeric_limits<double>::infinity());
   // d_(l-1)_v
-  std::vector<int> d_l_1_v(n_vertices, INFINITY);
+  std::vector<double> d_l_1_v(n_vertices, std::numeric_limits<double>::infinity());
 
   std::vector<int> pi(n_vertices);
 
@@ -122,6 +117,7 @@ has_negative_cycle(Digraph &digraph)
 
   for (int l = 1; l <= n_vertices; l++)
   {
+    // std::cout << "Round " << l << "\n";
     for (const auto &vertex : boost::make_iterator_range(boost::vertices(reverse)))
     {
       d_l_1_v[vertex] = d_l_v[vertex];
@@ -136,23 +132,29 @@ has_negative_cycle(Digraph &digraph)
         // the boost::target is the source, sadly, due to the edges inversion
         auto source = boost::target(edge, reverse);
         double cost = reverse[edge].cost;
-        // std::cout << source + 1 << ", " << vertex + 1 << " has cost " << cost << "\n";
+        // std::cout << source + 1 << ", " << vertex + 1 << " has cost " << cost << "+ " << d_l_1_v[source] << "\n";
 
         if (d_l_v[vertex] > d_l_1_v[source] + cost)
         {
           d_l_v[vertex] = d_l_1_v[source] + cost;
           pi[vertex] = source;
-
-          if (l == n_vertices)
-          {
-            // std::cout << "Neg cycle at " << vertex + 1 << "\n";
-            NegativeCycle cycle = find_cicle(vertex, pi, digraph);
-            return {true, cycle, boost::none};
-          }
+          // std::cout << vertex + 1 << ": " << d_l_v[vertex] << " new vs old " << d_l_1_v[vertex] << "\n";
         }
       }
     }
   }
+  for (int vertex = 0; vertex < n_vertices; vertex++)
+  {
+    // std::cout << vertex + 1 << ": " << d_l_v[vertex] << " and " << d_l_1_v[vertex]
+    //           << "\n";
+    if (d_l_v[vertex] != d_l_1_v[vertex])
+    {
+      // std::cout << "Neg cycle at " << vertex + 1 << "\n";
+      NegativeCycle cycle = find_cicle(vertex, pi, digraph);
+      return {true, cycle, boost::none};
+    }
+  }
+
   std::cout << "No Neg cycle "
                "\n";
 
@@ -165,7 +167,7 @@ Loophole build_loophole(const NegativeCycle &negcycle,
 {
   Walk wk(market, boost::source(negcycle.get()[0], aux_digraph));
 
-  for (Arc arc: negcycle.get())
+  for (Arc arc : negcycle.get())
   {
     Arc a;
     std::tie(a, std::ignore) = boost::edge(boost::source(arc, aux_digraph), boost::target(arc, aux_digraph), market);
