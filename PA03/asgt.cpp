@@ -163,16 +163,16 @@ Loophole build_loophole(const NegativeCycle &negcycle,
                         const Digraph &aux_digraph,
                         const Digraph &market)
 {
-  /* bogus code */
-  const Arc &b0 = *(out_edges(0, market).first);
-  const Arc &b1 = *(out_edges(1, market).first);
+  Walk wk(market, boost::source(negcycle.get()[0], aux_digraph));
 
-  Walk w(market, 0);
-  w.extend(b0);
-  w.extend(b1);
+  for (Arc arc: negcycle.get())
+  {
+    Arc a;
+    std::tie(a, std::ignore) = boost::edge(boost::source(arc, aux_digraph), boost::target(arc, aux_digraph), market);
 
-  // encourage RVO
-  return Loophole(w);
+    wk.extend(a);
+  }
+  return Loophole(wk);
 }
 
 FeasibleMultiplier build_feasmult(const FeasiblePotential &feaspot,
