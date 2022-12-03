@@ -8,7 +8,7 @@
 /* Students may add any number of fields and methods to this struct */
 struct BundledVertex
 {
-
+  size_t pi;
 };
 
 /* Students may add any number of fields and methods to this struct;

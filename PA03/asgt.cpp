@@ -27,7 +27,6 @@ using std::vector;
 
 Digraph build_digraph(const Digraph &market)
 {
-  /* placeholder for NRVO */
   Digraph digraph(num_vertices(market));
 
   std::for_each(boost::edges(market).first,
@@ -112,15 +111,13 @@ has_negative_cycle(Digraph &digraph)
 
   bool debug = false;
 
-  pi[0] = 0;
-
   d_l_1_v[0] = 0;
   d_l_v[0] = 0;
 
   for (int l = 1; l <= n_vertices; l++)
   {
-    if (l == n_vertices && debug)
-      std::cout << "Round " << l << "\n";
+    // if (l == n_vertices && debug)
+    //   std::cout << "Round " << l << "\n";
     for (const auto &vertex : boost::make_iterator_range(boost::vertices(reverse)))
     {
       d_l_1_v[vertex] = d_l_v[vertex];
@@ -128,28 +125,27 @@ has_negative_cycle(Digraph &digraph)
     for (const auto &vertex : boost::make_iterator_range(boost::vertices(reverse)))
     {
       d_l_v[vertex] = d_l_1_v[vertex];
-      if (l == n_vertices && debug)
-        std::cout << "Vertex " << vertex + 1 << "\n";
+      // if (l == n_vertices && debug)
+      //   std::cout << "Vertex " << vertex + 1 << "\n";
       // had to reverse the digraph's edges source and target ends in order to use out_edges as "in_edges"
       for (const auto &edge : boost::make_iterator_range(boost::out_edges(vertex, reverse)))
       {
         // the boost::target is the source, sadly, due to the edges inversion
         auto source = boost::target(edge, reverse);
         double cost = reverse[edge].cost;
-        if (l == n_vertices && debug)
-          std::cout << source + 1 << ", " << vertex + 1 << " has cost " << cost << "+ " << d_l_1_v[source] << "\n";
+        // if (l == n_vertices && debug)
+        //   std::cout << source + 1 << ", " << vertex + 1 << " has cost " << cost << "+ " << d_l_1_v[source] << "\n";
 
         if (d_l_v[vertex] > d_l_1_v[source] + cost)
         {
           d_l_v[vertex] = d_l_1_v[source] + cost;
           pi[vertex] = source;
-          if (l == n_vertices && debug)
-            std::cout << vertex + 1 << ": " << d_l_v[vertex] << " new vs old " << d_l_1_v[vertex] << "\n";
+          // if (l == n_vertices && debug)
+          //   std::cout << vertex + 1 << ": " << d_l_v[vertex] << " new vs old " << d_l_1_v[vertex] << "\n";
 
           if (vertex == 0)
           {
-            NegativeCycle cycle = find_cicle(vertex, pi, digraph);
-            return {true, cycle, boost::none};
+            return {true, find_cicle(vertex, pi, digraph), boost::none};
           }
         }
       }
@@ -157,23 +153,26 @@ has_negative_cycle(Digraph &digraph)
   }
   for (int vertex = 0; vertex < n_vertices; vertex++)
   {
-    if (debug)
-      std::cout << vertex + 1 << ": new(" << d_l_v[vertex] << ") and old(" << d_l_1_v[vertex]
-                << ")\n";
+    // if (debug)
+    //   std::cout << vertex + 1 << ": new(" << d_l_v[vertex] << ") and old(" << d_l_1_v[vertex]
+    //             << ")\n";
     if (d_l_v[vertex] != d_l_1_v[vertex])
     {
-      if (debug)
-        std::cout << "Neg cycle at " << vertex + 1 << "\n";
+      // if (debug)
+      //   std::cout << "Neg cycle at " << vertex + 1 << "\n";
 
       NegativeCycle cycle = find_cicle(vertex, pi, digraph);
       return {true, cycle, boost::none};
     }
   }
 
-  std::cout << "No Neg cycle "
-               "\n";
-
-  return {false, boost::none, boost::none};
+  // std::cout << "No Neg cycle "
+  //              "\n";
+  for (int i = 0; i < n_vertices; i++)
+  {
+    digraph[i].pi = pi[i];
+  }
+  return {false, boost::none, FeasiblePotential(digraph, d_l_v)};
 }
 
 Loophole build_loophole(const NegativeCycle &negcycle,
@@ -197,7 +196,21 @@ FeasibleMultiplier build_feasmult(const FeasiblePotential &feaspot,
                                   const Digraph &market)
 {
   vector<double> z(num_vertices(market), 1.0);
+  for (size_t i = 0; i < num_vertices(market); i++)
+  {
+    // Arc a;
+    // std::tie(a, std::ignore) = boost::edge(aux_digraph[i].pi, i, market);
 
-  // encourage RVO
+    // z[i] = pow(10, (-1) * feaspot.potential()[i]) * market[a].cost;
+    // double arc_cost = i != aux_digraph[i].pi ? market[a].cost : 1;
+    // std::cout << "cost: " << i + 1 << "<= ("
+    //           << arc_cost
+    //           << ") <= " << aux_digraph[i].pi + 1 << "\n";
+
+    double fsI = feaspot.potential()[i];
+    // std::cout << "fsM: " << pow(10, 1 * fsI) * arc_cost << "\n";
+    z[i] = pow(10, (-1) * fsI);
+  }
+
   return FeasibleMultiplier(market, z);
 }
