@@ -110,6 +110,8 @@ has_negative_cycle(Digraph &digraph)
 
   std::vector<int> pi(n_vertices);
 
+  bool debug = false;
+
   pi[0] = 0;
 
   d_l_1_v[0] = 0;
@@ -117,7 +119,8 @@ has_negative_cycle(Digraph &digraph)
 
   for (int l = 1; l <= n_vertices; l++)
   {
-    // std::cout << "Round " << l << "\n";
+    if (l == n_vertices && debug)
+      std::cout << "Round " << l << "\n";
     for (const auto &vertex : boost::make_iterator_range(boost::vertices(reverse)))
     {
       d_l_1_v[vertex] = d_l_v[vertex];
@@ -125,31 +128,43 @@ has_negative_cycle(Digraph &digraph)
     for (const auto &vertex : boost::make_iterator_range(boost::vertices(reverse)))
     {
       d_l_v[vertex] = d_l_1_v[vertex];
-      // std::cout << "Vertex " << vertex + 1 << "\n";
+      if (l == n_vertices && debug)
+        std::cout << "Vertex " << vertex + 1 << "\n";
       // had to reverse the digraph's edges source and target ends in order to use out_edges as "in_edges"
       for (const auto &edge : boost::make_iterator_range(boost::out_edges(vertex, reverse)))
       {
         // the boost::target is the source, sadly, due to the edges inversion
         auto source = boost::target(edge, reverse);
         double cost = reverse[edge].cost;
-        // std::cout << source + 1 << ", " << vertex + 1 << " has cost " << cost << "+ " << d_l_1_v[source] << "\n";
+        if (l == n_vertices && debug)
+          std::cout << source + 1 << ", " << vertex + 1 << " has cost " << cost << "+ " << d_l_1_v[source] << "\n";
 
         if (d_l_v[vertex] > d_l_1_v[source] + cost)
         {
           d_l_v[vertex] = d_l_1_v[source] + cost;
           pi[vertex] = source;
-          // std::cout << vertex + 1 << ": " << d_l_v[vertex] << " new vs old " << d_l_1_v[vertex] << "\n";
+          if (l == n_vertices && debug)
+            std::cout << vertex + 1 << ": " << d_l_v[vertex] << " new vs old " << d_l_1_v[vertex] << "\n";
+
+          if (vertex == 0)
+          {
+            NegativeCycle cycle = find_cicle(vertex, pi, digraph);
+            return {true, cycle, boost::none};
+          }
         }
       }
     }
   }
   for (int vertex = 0; vertex < n_vertices; vertex++)
   {
-    // std::cout << vertex + 1 << ": " << d_l_v[vertex] << " and " << d_l_1_v[vertex]
-    //           << "\n";
+    if (debug)
+      std::cout << vertex + 1 << ": new(" << d_l_v[vertex] << ") and old(" << d_l_1_v[vertex]
+                << ")\n";
     if (d_l_v[vertex] != d_l_1_v[vertex])
     {
-      // std::cout << "Neg cycle at " << vertex + 1 << "\n";
+      if (debug)
+        std::cout << "Neg cycle at " << vertex + 1 << "\n";
+
       NegativeCycle cycle = find_cicle(vertex, pi, digraph);
       return {true, cycle, boost::none};
     }
