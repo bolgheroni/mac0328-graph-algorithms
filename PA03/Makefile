@@ -38,5 +38,7 @@ test: $(OUTS)
 
 tests/out%: tests/in% $(PROG)
 	-./$(PROG) < $< > $@ 2>&1
+testsp/out%: tests/in% $(PROG)
+	-./$(PROG) < $< 
 
 -include $(DEPS)
