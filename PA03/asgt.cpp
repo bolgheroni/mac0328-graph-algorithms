@@ -72,35 +72,85 @@ NegativeCycle find_cicle(int vertex, std::vector<int> pi, Digraph &digraph)
   std::stack<int> path;
   int current = vertex;
   bool done = false;
+  // bool debug = false;
+  std::vector<bool> has_passed_through(num_vertices(digraph), false);
 
+  // debug = false;
+  // if (debug)
+  //   std::cout << "Start at : " << current + 1 << "\n";
   while (!done || current != vertex)
   {
+    if (has_passed_through[current])
+    {
+      // if (debug)
+      //   std::cout << "PT for " << current + 1 << "\n";
+      break;
+    }
+    has_passed_through[current] = true;
     done = true;
-    // std::cout << current + 1 << " ";
+    // if (debug)
+    //   std::cout << current + 1 << " ";
     path.push(current);
     current = pi[current];
   }
+  // debug = false;
   path.push(current);
-  // std::cout << current + 1 << "\n";
-
-  Walk wk(digraph, vertex);
-
-  current = path.top();
-  path.pop();
-  while (!path.empty())
+  // if (debug)
+  //   std::cout << "\nOut: " << current + 1 << "\n";
+  if (current == vertex)
   {
-    int next = path.top();
-    path.pop();
-    // std::cout << current + 1 << " ";
-    Arc a;
-    std::tie(a, std::ignore) = boost::edge(current, next, digraph);
+    Walk wk(digraph, vertex);
 
-    wk.extend(a);
-    current = next;
+    current = path.top();
+    path.pop();
+    while (!path.empty())
+    {
+      int next = path.top();
+      path.pop();
+      // std::cout << current + 1 << " ";
+      Arc a;
+      std::tie(a, std::ignore) = boost::edge(current, next, digraph);
+
+      wk.extend(a);
+      current = next;
+    }
+    // std::cout << current + 1 << "\n";
+    NegativeCycle cy(wk);
+    return cy;
   }
-  // std::cout << current + 1 << "\n";
-  NegativeCycle cy(wk);
-  return cy;
+  else
+  {
+    Walk wk(digraph, current);
+
+    current = path.top();
+    path.pop();
+    int end_v = current;
+    bool hasAddedEndV = false;
+    std::vector<bool> has_seen_v(num_vertices(digraph), false);
+    // if (debug)
+    //   std::cout << "Building path starting at " << current + 1 << ": \n";
+    while (!hasAddedEndV || current != end_v)
+    {
+      hasAddedEndV = true;
+      int next = path.top();
+      path.pop();
+      // if (debug)
+      //   std::cout << current + 1 << " ";
+      Arc a;
+      std::tie(a, std::ignore) = boost::edge(current, next, digraph);
+
+      // if (debug)
+      //   std::cout << current + 1 << " -> " << next + 1 << "(hs? "<< (has_seen_v[current] || has_seen_v[next]) << ")\n";
+      wk.extend(a);
+      has_seen_v[current] = true;
+      current = next;
+    }
+    // if (debug)
+    //   std::cout << "Ended path at " << current + 1 << "\n";
+    // std::cout << current + 1 << "\n";
+    NegativeCycle cy(wk);
+    return cy;
+  }
 }
 
 std::tuple<bool,
@@ -124,8 +174,10 @@ has_negative_cycle(Digraph &digraph)
 
   for (int l = 1; l <= n_vertices; l++)
   {
+
     if (debug)
-      std::cout << "Round " << l << "\n";
+      std::cout
+          << "Round " << l << "\n";
     for (const auto &vertex : boost::make_iterator_range(boost::vertices(reverse)))
     {
       d_l_1_v[vertex] = d_l_v[vertex];
@@ -150,27 +202,28 @@ has_negative_cycle(Digraph &digraph)
           pi[vertex] = source;
           if (debug)
             std::cout << vertex + 1 << ": " << d_l_v[vertex] << " new vs old " << d_l_1_v[vertex] << "\n";
+          debug = false;
         }
       }
     }
   }
   for (int vertex = 0; vertex < n_vertices; vertex++)
   {
-    // if (debug)
-    //   std::cout << vertex + 1 << ": new(" << d_l_v[vertex] << ") and old(" << d_l_1_v[vertex]
-    //             << ")\n";
+    if (debug)
+      std::cout << vertex + 1 << ": new(" << d_l_v[vertex] << ") and old(" << d_l_1_v[vertex]
+                << ")\n";
     if (d_l_v[vertex] != d_l_1_v[vertex])
     {
-      // if (debug)
-      //   std::cout << "Neg cycle at " << vertex + 1 << "\n";
+      if (debug)
+        std::cout << "Neg cycle at " << vertex + 1 << "\n";
 
       NegativeCycle cycle = find_cicle(vertex, pi, digraph);
       return {true, cycle, boost::none};
     }
   }
 
-  // std::cout << "No Neg cycle "
-  //              "\n";
+  std::cout << "No Neg cycle "
+               "\n";
   for (int i = 0; i < n_vertices; i++)
   {
     digraph[i].pi = pi[i];
