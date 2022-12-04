@@ -27,7 +27,7 @@ using std::vector;
 
 Digraph build_digraph(const Digraph &market)
 {
-  Digraph digraph(num_vertices(market));
+  Digraph digraph(num_vertices(market) + 1);
 
   std::for_each(boost::edges(market).first,
                 boost::edges(market).second,
@@ -39,6 +39,14 @@ Digraph build_digraph(const Digraph &market)
                   std::tie(a, std::ignore) = boost::add_edge(sourceV, targetV, digraph);
                   digraph[a].cost = (-1) * log(market[arc].cost);
                 });
+
+  size_t artificial_vertex = num_vertices(market);
+  for (const auto &vertex : boost::make_iterator_range(boost::vertices(market)))
+  {
+    Arc a;
+    std::tie(a, std::ignore) = boost::add_edge(artificial_vertex, vertex, digraph);
+    digraph[a].cost = 0;
+  }
   return digraph;
 }
 
@@ -111,13 +119,13 @@ has_negative_cycle(Digraph &digraph)
 
   bool debug = false;
 
-  d_l_1_v[0] = 0;
-  d_l_v[0] = 0;
+  d_l_1_v[d_l_1_v.size() - 1] = 0;
+  d_l_v[d_l_v.size() - 1] = 0;
 
   for (int l = 1; l <= n_vertices; l++)
   {
-    // if (l == n_vertices && debug)
-    //   std::cout << "Round " << l << "\n";
+    if (debug)
+      std::cout << "Round " << l << "\n";
     for (const auto &vertex : boost::make_iterator_range(boost::vertices(reverse)))
     {
       d_l_1_v[vertex] = d_l_v[vertex];
@@ -125,28 +133,23 @@ has_negative_cycle(Digraph &digraph)
     for (const auto &vertex : boost::make_iterator_range(boost::vertices(reverse)))
     {
       d_l_v[vertex] = d_l_1_v[vertex];
-      // if (l == n_vertices && debug)
-      //   std::cout << "Vertex " << vertex + 1 << "\n";
+      if (debug)
+        std::cout << "Vertex " << vertex + 1 << "\n";
       // had to reverse the digraph's edges source and target ends in order to use out_edges as "in_edges"
       for (const auto &edge : boost::make_iterator_range(boost::out_edges(vertex, reverse)))
       {
         // the boost::target is the source, sadly, due to the edges inversion
         auto source = boost::target(edge, reverse);
         double cost = reverse[edge].cost;
-        // if (l == n_vertices && debug)
-        //   std::cout << source + 1 << ", " << vertex + 1 << " has cost " << cost << "+ " << d_l_1_v[source] << "\n";
+        if (debug)
+          std::cout << source + 1 << ", " << vertex + 1 << " has cost " << cost << "+ " << d_l_1_v[source] << "\n";
 
         if (d_l_v[vertex] > d_l_1_v[source] + cost)
         {
           d_l_v[vertex] = d_l_1_v[source] + cost;
           pi[vertex] = source;
-          // if (l == n_vertices && debug)
-          //   std::cout << vertex + 1 << ": " << d_l_v[vertex] << " new vs old " << d_l_1_v[vertex] << "\n";
-
-          if (vertex == 0)
-          {
-            return {true, find_cicle(vertex, pi, digraph), boost::none};
-          }
+          if (debug)
+            std::cout << vertex + 1 << ": " << d_l_v[vertex] << " new vs old " << d_l_1_v[vertex] << "\n";
         }
       }
     }
