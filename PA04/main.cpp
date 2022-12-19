@@ -18,17 +18,32 @@ using std::cout;
 using std::endl;
 using std::flush;
 
-Digraph read_digraph(std::istream &is);
-
-Digraph read_digraph(std::istream &is)
+std::tuple<size_t, size_t, size_t, size_t> get_digraph_metadata(std::istream &is)
 {
-    typename boost::graph_traits<Digraph>::vertices_size_type n;
-    is >> n;
-
-    Digraph digraph(n);
-
+    size_t source;
+    size_t target;
+    size_t n;
     size_t m;
+
+    is >> n;
     is >> m;
+
+    is >> source;
+    source -= 1;
+    is >> target;
+    target -= 1;
+
+    std::cout << "Source: " << source + 1 << "\n";
+    std::cout << "Target: " << target + 1 << "\n";
+
+    return std::make_tuple(n, m, source, target);
+}
+
+Digraph read_digraph(std::istream &is, typename boost::graph_traits<Digraph>::vertices_size_type n, size_t m);
+
+Digraph read_digraph(std::istream &is, typename boost::graph_traits<Digraph>::vertices_size_type n, size_t m)
+{
+    Digraph digraph(n);
 
     while (m--)
     {
@@ -37,6 +52,7 @@ Digraph read_digraph(std::istream &is)
         Arc a;
         std::tie(a, std::ignore) = boost::add_edge(--u, --v, digraph);
         is >> digraph[a].cost;
+        std::cout << u + 1 << "->" << v + 1 << "(" << digraph[a].cost << ")\n";
     }
 
     return digraph;
@@ -46,7 +62,10 @@ int main(int argc, char **argv)
 {
     try
     {
-        Digraph digraph{read_digraph(std::cin)};
+
+        size_t n, m, source, target;
+        std::tie(n, m, source, target) = get_digraph_metadata(std::cin);
+        Digraph digraph{read_digraph(std::cin, n, m)};
     }
     catch (const std::exception &e)
     {
