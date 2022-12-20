@@ -12,8 +12,11 @@ struct BundledVertex
 
 struct BundledArc
 {
-    double cost;
-    BundledArc() : cost(0.0) {}
+    int flow;
+    int res_capacity;
+    int capacity;
+    bool is_backwards;
+    BundledArc() : flow(0), res_capacity(0), capacity(0), is_backwards(false) {}
 };
 
 typedef boost::adjacency_list<boost::vecS,
