@@ -199,7 +199,7 @@ std::pair<std::vector<int>, std::vector<int>> shortest_path(Digraph &residual, i
     return std::make_pair(shortest_path_v, color);
 }
 
-void print_shortest_path(Digraph &digraph, std::vector<std::tuple<size_t, size_t, int>> arcs, std::vector<int> path, int source, int target)
+void print_and_implement_shortest_path(Digraph &digraph, std::vector<std::tuple<size_t, size_t, int>> arcs, std::vector<int> path, int source, int target)
 {
     std::cout << "PATH from " << source + 1 << " to " << target + 1 << "\n";
     int previous = source;
@@ -216,7 +216,7 @@ void print_shortest_path(Digraph &digraph, std::vector<std::tuple<size_t, size_t
         {
             bool reversed = current != abs(current);
             int u, v, f;
-            for (int i = 0; i < arcs.size(); i++)
+            for (size_t i = 0; i < arcs.size(); i++)
             {
                 std::tie(u, v, f) = arcs[i];
 
@@ -225,17 +225,25 @@ void print_shortest_path(Digraph &digraph, std::vector<std::tuple<size_t, size_t
                 if (u == abs(previous) && v == abs(current))
                 {
                     // std::cout << i + 1 << " ";
-                    arcs_indexes.push_back(i);
+                    arcs_indexes.push_back(reversed ? -i : i);
                     Arc a;
                     std::tie(a, std::ignore) = boost::edge(u, v, digraph);
                     int original_flow = digraph[a].flow;
-                    int residual_cap = digraph[a].capacity - original_flow;
+                    int residual_cap;
                     if (reversed)
                     {
                         residual_cap = original_flow;
+                        // digraph[a].flow = original_flow - epslon;
                     }
+                    else
+                    {
+                        residual_cap = digraph[a].capacity - original_flow;
+                        // digraph[a].flow = original_flow + epslon;
+                    }
+
                     epslon = epslon < residual_cap ? epslon : residual_cap;
                     length = length + 1;
+
                     break;
                 }
             }
@@ -245,7 +253,16 @@ void print_shortest_path(Digraph &digraph, std::vector<std::tuple<size_t, size_t
     std::cout << "0 " << epslon << " " << length << "\n";
     for (const auto index : arcs_indexes)
     {
-        std::cout << index + 1 << " ";
+        bool direction = index > 0 ? 1 : -1;
+        std::cout << index + direction << " ";
+
+        // update flow
+        int u, v;
+        std::tie(u, v, std::ignore) = arcs[abs(index)];
+
+        Arc a;
+        std::tie(a, std::ignore) = boost::edge(u, v, digraph);
+        digraph[a].flow = digraph[a].flow + direction * epslon;
     }
     std::cout << "\n";
 }
@@ -253,7 +270,7 @@ void print_shortest_path(Digraph &digraph, std::vector<std::tuple<size_t, size_t
 int max_integral_flow(Digraph &digraph, std::vector<std::tuple<size_t, size_t, int>> arcs,
                       int source, int target)
 {
-    for (int t = 0; t <= 5; t++)
+    for (int t = 0; t >= 0; t++)
     {
         print_residual_capacities(digraph, arcs);
         Digraph residual = compute_residual(digraph);
@@ -262,14 +279,15 @@ int max_integral_flow(Digraph &digraph, std::vector<std::tuple<size_t, size_t, i
         if (colors[target] == white)
         {
             std::cout << "NO PATH FOUND\n";
+            return 1;
         }
         else
         {
-            print_shortest_path(digraph, arcs, shortest_path_res, source, target);
+            print_and_implement_shortest_path(digraph, arcs, shortest_path_res, source, target);
         }
         //  ...
     }
-    return 1;
+    return -1;
 }
 
 int main(int argc, char **argv)
