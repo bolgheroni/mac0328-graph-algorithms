@@ -132,7 +132,7 @@ void print_residual_capacities(Digraph &digraph, std::vector<std::tuple<size_t, 
     }
 }
 
-std::pair<std::vector<int>, std::vector<int>> shortest_path(Digraph &residual, int source, int target)
+std::pair<std::vector<int>, std::vector<int>> SPMC_bfs(Digraph &residual, int source, int target)
 {
     std::vector<int> dist(boost::num_vertices(residual), std::numeric_limits<int>::max());
     std::vector<int> pred(boost::num_vertices(residual));
@@ -199,7 +199,7 @@ std::pair<std::vector<int>, std::vector<int>> shortest_path(Digraph &residual, i
     return std::make_pair(shortest_path_v, color);
 }
 
-void print_and_implement_shortest_path(Digraph &digraph, std::vector<std::tuple<size_t, size_t, int>> arcs, std::vector<int> path, int source, int target)
+void update_flow_print_shortest_path(Digraph &digraph, std::vector<std::tuple<size_t, size_t, int>> arcs, std::vector<int> path, int source, int target)
 {
     std::cout << "PATH from " << source + 1 << " to " << target + 1 << "\n";
     int previous = source;
@@ -275,7 +275,7 @@ int max_integral_flow(Digraph &digraph, std::vector<std::tuple<size_t, size_t, i
         print_residual_capacities(digraph, arcs);
         Digraph residual = compute_residual(digraph);
         std::vector<int> shortest_path_res, colors;
-        std::tie(shortest_path_res, colors) = shortest_path(residual, source, target);
+        std::tie(shortest_path_res, colors) = SPMC_bfs(residual, source, target);
         if (colors[target] == white)
         {
             std::cout << "NO PATH FOUND\n";
@@ -283,7 +283,7 @@ int max_integral_flow(Digraph &digraph, std::vector<std::tuple<size_t, size_t, i
         }
         else
         {
-            print_and_implement_shortest_path(digraph, arcs, shortest_path_res, source, target);
+            update_flow_print_shortest_path(digraph, arcs, shortest_path_res, source, target);
         }
         //  ...
     }
