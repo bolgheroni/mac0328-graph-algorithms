@@ -289,6 +289,33 @@ void update_flow_print_shortest_path(Digraph &digraph, std::vector<std::tuple<si
     std::cout << "\n";
 }
 
+void print_min_cut(Digraph &digraph, std::vector<int> colors, int source, int target)
+{
+    int val_f = 0;
+    std::vector<int> S;
+    for (const auto &vertex : boost::make_iterator_range(boost::vertices(digraph)))
+    {
+        if (colors[vertex] != Color::white)
+        {
+            S.push_back(vertex);
+            for (const auto &edge : boost::make_iterator_range(boost::out_edges(vertex, digraph)))
+            {
+                auto target = boost::target(edge, digraph);
+                if (colors[target] == Color::white)
+                {
+                    val_f += digraph[edge].flow;
+                }
+            }
+        }
+    }
+    std::cout << "1 " << val_f << " " << S.size() << "\n";
+    for (const auto v : S)
+    {
+        std::cout << v + 1 << " ";
+    }
+    std::cout << "\n";
+}
+
 int max_integral_flow(Digraph &digraph, std::vector<std::tuple<size_t, size_t, int>> arcs,
                       int source, int target)
 {
@@ -302,7 +329,7 @@ int max_integral_flow(Digraph &digraph, std::vector<std::tuple<size_t, size_t, i
         // std::cout << "Computed SPMC\n";
         if (colors[target] == white)
         {
-            std::cout << "NO PATH FOUND\n";
+            print_min_cut(digraph, colors, source, target);
             return 1;
         }
         else
