@@ -15,8 +15,8 @@ struct BundledArc
     int flow;
     int res_capacity;
     int capacity;
-    bool is_backwards;
-    BundledArc() : flow(0), res_capacity(0), capacity(0), is_backwards(false) {}
+    int direction;
+    BundledArc() : flow(0), res_capacity(0), capacity(0), direction(1) {}
 };
 
 typedef boost::adjacency_list<boost::vecS,

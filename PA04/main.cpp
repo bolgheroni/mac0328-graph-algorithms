@@ -2,7 +2,9 @@
 
 #include <exception>
 #include <iostream>
-#include <tuple>   // for std::tie and std::ignore
+#include <tuple> // for std::tie and std::ignore
+#include <queue>
+#include <stack>
 #include <utility> // for pairs
 
 #define BOOST_ALLOW_DEPRECATED_HEADERS // silence warnings
@@ -18,12 +20,19 @@ using std::cout;
 using std::endl;
 using std::flush;
 
+enum Color
+{
+    white,
+    grey,
+    black
+};
+
 // Digraph read_digraph(std::istream &is, typename boost::graph_traits<Digraph>::vertices_size_type n, size_t m);
 
-std::tuple<size_t, int, size_t, size_t> get_digraph_metadata(std::istream &is)
+std::tuple<size_t, int, int, int> get_digraph_metadata(std::istream &is)
 {
-    size_t source;
-    size_t target;
+    int source;
+    int target;
     size_t n;
     int m;
 
@@ -88,7 +97,7 @@ Digraph compute_residual(Digraph &digraph)
                       {
                           Arc a;
                           std::tie(a, std::ignore) = boost::add_edge(sourceV, targetV, residual);
-                          residual[a].is_backwards = false;
+                          residual[a].direction = 1;
                           residual[a].capacity = digraph[arc].capacity;
                           residual[a].flow = digraph[arc].flow;
                           residual[a].res_capacity = digraph[arc].capacity - digraph[arc].flow;
@@ -98,7 +107,7 @@ Digraph compute_residual(Digraph &digraph)
                       {
                           Arc b;
                           std::tie(b, std::ignore) = boost::add_edge(targetV, sourceV, residual);
-                          residual[b].is_backwards = true;
+                          residual[b].direction = -1;
                           residual[b].capacity = digraph[arc].capacity;
                           residual[b].flow = digraph[arc].flow;
                           residual[b].res_capacity = digraph[arc].flow;
@@ -121,15 +130,83 @@ void print_residual_capacities(Digraph &digraph, std::vector<std::tuple<size_t, 
         // std::cout << u + 1 << "->" << v + 1 << " (" << -1 << ") = " << digraph[a].flow << " \n\n";
         std::cout << digraph[a].capacity - digraph[a].flow << " " << digraph[a].flow << " \n";
     }
-
 }
 
-int max_integral_flow(Digraph &digraph, std::vector<std::tuple<size_t, size_t, int>> arcs, size_t source, size_t target)
+void shortest_path(Digraph &residual, int source, int target)
+{
+    std::vector<int> dist(boost::num_vertices(residual), std::numeric_limits<int>::max());
+    std::vector<int> pred(boost::num_vertices(residual));
+    std::vector<int> color(boost::num_vertices(residual), Color::white); // 0 white, 1 grey, -1 black
+
+    dist[source] = 0;
+    std::queue<int> queue;
+
+    for (const auto &vertex : boost::make_iterator_range(boost::vertices(residual)))
+    {
+        pred[vertex] = vertex;
+    }
+    queue.push(source);
+
+    while (!queue.empty())
+    {
+        auto u = queue.front();
+        queue.pop();
+        // std::cout << "vertex: " << u + 1 << ", dist = " << dist[u] << "\n";
+        for (const auto &edge : boost::make_iterator_range(boost::out_edges(u, residual)))
+        {
+            auto v = boost::target(edge, residual);
+            if (color[v] == Color::white)
+            {
+                color[v] = Color::grey;
+                pred[v] = u * residual[edge].direction;
+                dist[v] = dist[u] + 1;
+                queue.push(v);
+                // std::cout << "new edge: " << u + 1 << " to " << v + 1 << "\n";
+            }
+        }
+        color[u] = Color::black;
+    }
+    // std::cout << "pred[target] = " << pred[target] << "\n";
+    if (pred[target] != target)
+    {
+        std::cout << "PATH from " << source + 1 << " to " << target + 1 << "\n";
+        std::stack<int> path_stack;
+        int pi = target;
+        while (abs(pi) != source)
+        {
+            path_stack.push(pi);
+            // std::cout << pi + 1 << " (" << (reversed ? "-1" : "1") << ") ";
+            pi = pred[pi];
+        }
+        // std::cout << source + 1 << "\n";
+        path_stack.push(pi);
+
+        pi = path_stack.top();
+        path_stack.pop();
+        std::cout << pi + 1;
+        while (!path_stack.empty())
+        {
+            pi = path_stack.top();
+            path_stack.pop();
+            bool reversed = pi != abs(pi);
+            std::cout  << " (" << (reversed ? "-1" : "1") << ") " << pi + 1;
+        }
+        std::cout << "\n";
+    }
+    else
+    {
+        std::cout << "NO PATH FOUND\n";
+    }
+}
+
+int max_integral_flow(Digraph &digraph, std::vector<std::tuple<size_t, size_t, int>> arcs,
+                      int source, int target)
 {
     for (int t = 0; t <= 5; t++)
     {
         print_residual_capacities(digraph, arcs);
         Digraph residual = compute_residual(digraph);
+        shortest_path(residual, source, target);
         //  ...
     }
     return 1;
@@ -140,8 +217,8 @@ int main(int argc, char **argv)
     try
     {
 
-        size_t n, source, target;
-        int m;
+        size_t n;
+        int m, source, target;
         std::tie(n, m, source, target) = get_digraph_metadata(std::cin);
         const std::vector<std::tuple<size_t, size_t, int>> arcs = get_digraph_arcs(std::cin, m);
         Digraph digraph{build_digraph(n, m, arcs)};
