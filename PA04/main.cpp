@@ -144,9 +144,10 @@ std::pair<std::vector<int>, std::vector<int>> SPMC_bfs(Digraph &residual, int so
 
     for (const auto &vertex : boost::make_iterator_range(boost::vertices(residual)))
     {
-        pred[vertex] = vertex;
+        pred[vertex] = vertex + 1;
     }
     queue.push(source);
+    color[source] = Color::grey;
 
     while (!queue.empty())
     {
@@ -159,32 +160,41 @@ std::pair<std::vector<int>, std::vector<int>> SPMC_bfs(Digraph &residual, int so
             if (color[v] == Color::white)
             {
                 color[v] = Color::grey;
-                pred[v] = u * residual[edge].direction;
+                pred[v] = u * residual[edge].direction + residual[edge].direction;
                 dist[v] = dist[u] + 1;
                 queue.push(v);
-                // std::cout << "new edge: " << u + 1 << " to " << v + 1 << "\n";
+                // std::cout << "new edge: " << u + 1 << " to " << v + 1 << " ( " << residual[edge].direction << " )"
+                //           << "\n";
             }
         }
         color[u] = Color::black;
     }
     // std::cout << "pred[target] = " << pred[target] << "\n";
-    if (pred[target] != target)
+    for (int i = 0; i < boost::num_vertices(residual); i++)
     {
-        // std::cout << "PATH from " << source + 1 << " to " << target + 1 << "\n";
+
+        // std::cout << "pred[" << i + 1 << "] = " << pred[i] << "\n";
+    }
+    if (pred[target] - 1 != target)
+    {
+        // std::cout << "(SPMC_bfs) PATH from " << source + 1 << " to " << target + 1 << "(reversed) \n";
         std::stack<int> path_stack;
         int pi = target;
         while (abs(pi) != source)
         {
             path_stack.push(pi);
-            // std::cout << pi + 1 << " (" << (reversed ? "-1" : "1") << ") ";
-            pi = pred[pi];
+            int pred_abs_pi = pred[abs(pi)];
+            // std::cout << pi + (pi / abs(pi)) << " (" << pred_abs_pi / abs(pred_abs_pi) << ") ";
+            // std::cout << pred_abs_pi << " = " << (abs(pred_abs_pi) - 1) * (pred_abs_pi / abs(pred_abs_pi)) << "\n";
+            pi = (abs(pred_abs_pi) - 1) * (pred_abs_pi / abs(pred_abs_pi));
         }
         // std::cout << source + 1 << "\n";
         path_stack.push(pi);
 
         pi = path_stack.top();
         path_stack.pop();
-        // std::cout << pi + 1;
+        // std::cout << "(SPMC_bfs) PATH VECTOR (direct) \n";
+        // std::cout << pi << " ";
         shortest_path_v.push_back(pi);
         while (!path_stack.empty())
         {
@@ -192,16 +202,16 @@ std::pair<std::vector<int>, std::vector<int>> SPMC_bfs(Digraph &residual, int so
             path_stack.pop();
             shortest_path_v.push_back(pi);
             // bool reversed = pi != abs(pi);
-            // std::cout << " (" << (reversed ? "-1" : "1") << ") " << pi + 1;
+            // std::cout << pi << " ";
         }
-        // std::cout << "\n";
+        std::cout << "\n";
     }
     return std::make_pair(shortest_path_v, color);
 }
 
 void update_flow_print_shortest_path(Digraph &digraph, std::vector<std::tuple<size_t, size_t, int>> arcs, std::vector<int> path, int source, int target)
 {
-    std::cout << "PATH from " << source + 1 << " to " << target + 1 << "\n";
+    // std::cout << "(UPPSP) PATH from " << source + 1 << " to " << target + 1 << "(direct) \n";
     int previous = source;
     int current = source;
     int epslon = std::numeric_limits<int>::max();
@@ -212,20 +222,29 @@ void update_flow_print_shortest_path(Digraph &digraph, std::vector<std::tuple<si
     {
         previous = current;
         current = vertex;
+
+        int direction = previous >= 0 ? 1: -1;
+        bool reversed = direction == -1;
+
         if (vertex != source)
         {
-            bool reversed = current != abs(current);
+            length = length + 1;
+            // std::cout << "\nprevious = " << previous << ", current = " << current << "\n";
+            // std::cout << "abs previous = " << abs(previous) << ", abscurrent = " << abs(current) << "\n";
+            // std::cout << "reversed? = " << reversed << "\n";
+
             int u, v, f;
             for (size_t i = 0; i < arcs.size(); i++)
             {
                 std::tie(u, v, f) = arcs[i];
+                // std::cout << "u = " << u << ", v =  " << v << "\n";
+                bool matches_direct = !reversed && u == abs(previous) && v == abs(current);
+                bool matches_reversed = reversed && u == abs(current) && v == abs(previous);
 
-                // std::cout << u << ", " << v << ", " << f << "\n";
-
-                if (u == abs(previous) && v == abs(current))
+                if (matches_direct || matches_reversed)
                 {
-                    // std::cout << i + 1 << " ";
-                    arcs_indexes.push_back(reversed ? -i : i);
+                    // std::cout << u << " (" << direction << ") " << v << ", i =" << i + 1 << "\n";
+                    arcs_indexes.push_back(reversed ? -i - 1 : i + 1);
                     Arc a;
                     std::tie(a, std::ignore) = boost::edge(u, v, digraph);
                     int original_flow = digraph[a].flow;
@@ -242,7 +261,6 @@ void update_flow_print_shortest_path(Digraph &digraph, std::vector<std::tuple<si
                     }
 
                     epslon = epslon < residual_cap ? epslon : residual_cap;
-                    length = length + 1;
 
                     break;
                 }
@@ -253,12 +271,11 @@ void update_flow_print_shortest_path(Digraph &digraph, std::vector<std::tuple<si
     std::cout << "0 " << epslon << " " << length << "\n";
     for (const auto index : arcs_indexes)
     {
-        bool direction = index > 0 ? 1 : -1;
-        std::cout << index + direction << " ";
-
+        std::cout << index << " ";
+        int direction = index > 0 ? 1 : -1;
         // update flow
         int u, v;
-        std::tie(u, v, std::ignore) = arcs[abs(index)];
+        std::tie(u, v, std::ignore) = arcs[abs(index) - 1];
 
         Arc a;
         std::tie(a, std::ignore) = boost::edge(u, v, digraph);
@@ -274,8 +291,10 @@ int max_integral_flow(Digraph &digraph, std::vector<std::tuple<size_t, size_t, i
     {
         print_residual_capacities(digraph, arcs);
         Digraph residual = compute_residual(digraph);
+        // std::cout << "Computed residual\n";
         std::vector<int> shortest_path_res, colors;
         std::tie(shortest_path_res, colors) = SPMC_bfs(residual, source, target);
+        // std::cout << "Computed SPMC\n";
         if (colors[target] == white)
         {
             std::cout << "NO PATH FOUND\n";
