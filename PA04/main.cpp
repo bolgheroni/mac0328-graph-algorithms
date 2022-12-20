@@ -199,13 +199,53 @@ std::pair<std::vector<int>, std::vector<int>> shortest_path(Digraph &residual, i
     return std::make_pair(shortest_path_v, color);
 }
 
-void print_shortest_path(Digraph &digraph, std::vector<int> path, int source, int target)
+void print_shortest_path(Digraph &digraph, std::vector<std::tuple<size_t, size_t, int>> arcs, std::vector<int> path, int source, int target)
 {
     std::cout << "PATH from " << source + 1 << " to " << target + 1 << "\n";
+    int previous = source;
+    int current = source;
+    int epslon = std::numeric_limits<int>::max();
+    int length = 0;
+    std::vector<int> arcs_indexes;
+
     for (const auto vertex : path)
     {
-        bool reversed = vertex != abs(vertex);
-        std::cout << " (" << (reversed ? "-1" : "1") << ") " << vertex + 1;
+        previous = current;
+        current = vertex;
+        if (vertex != source)
+        {
+            bool reversed = current != abs(current);
+            int u, v, f;
+            for (int i = 0; i < arcs.size(); i++)
+            {
+                std::tie(u, v, f) = arcs[i];
+
+                // std::cout << u << ", " << v << ", " << f << "\n";
+
+                if (u == abs(previous) && v == abs(current))
+                {
+                    // std::cout << i + 1 << " ";
+                    arcs_indexes.push_back(i);
+                    Arc a;
+                    std::tie(a, std::ignore) = boost::edge(u, v, digraph);
+                    int original_flow = digraph[a].flow;
+                    int residual_cap = digraph[a].capacity - original_flow;
+                    if (reversed)
+                    {
+                        residual_cap = original_flow;
+                    }
+                    epslon = epslon < residual_cap ? epslon : residual_cap;
+                    length = length + 1;
+                    break;
+                }
+            }
+            // std::cout << " (" << (reversed ? "-1" : "1") << ") " << vertex + 1;
+        }
+    }
+    std::cout << "0 " << epslon << " " << length << "\n";
+    for (const auto index : arcs_indexes)
+    {
+        std::cout << index + 1 << " ";
     }
     std::cout << "\n";
 }
@@ -225,7 +265,7 @@ int max_integral_flow(Digraph &digraph, std::vector<std::tuple<size_t, size_t, i
         }
         else
         {
-            print_shortest_path(digraph, shortest_path_res, source, target);
+            print_shortest_path(digraph, arcs, shortest_path_res, source, target);
         }
         //  ...
     }
