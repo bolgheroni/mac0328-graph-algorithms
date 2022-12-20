@@ -118,7 +118,7 @@ Digraph compute_residual(Digraph &digraph)
 
 void print_residual_capacities(Digraph &digraph, std::vector<std::tuple<size_t, size_t, int>> arcs)
 {
-    std::cout << "Residual capacities: \n";
+    // std::cout << "Residual capacities: \n";
 
     for (auto const &arc : arcs)
     {
@@ -132,11 +132,12 @@ void print_residual_capacities(Digraph &digraph, std::vector<std::tuple<size_t, 
     }
 }
 
-void shortest_path(Digraph &residual, int source, int target)
+std::pair<std::vector<int>, std::vector<int>> shortest_path(Digraph &residual, int source, int target)
 {
     std::vector<int> dist(boost::num_vertices(residual), std::numeric_limits<int>::max());
     std::vector<int> pred(boost::num_vertices(residual));
     std::vector<int> color(boost::num_vertices(residual), Color::white); // 0 white, 1 grey, -1 black
+    std::vector<int> shortest_path_v;
 
     dist[source] = 0;
     std::queue<int> queue;
@@ -169,7 +170,7 @@ void shortest_path(Digraph &residual, int source, int target)
     // std::cout << "pred[target] = " << pred[target] << "\n";
     if (pred[target] != target)
     {
-        std::cout << "PATH from " << source + 1 << " to " << target + 1 << "\n";
+        // std::cout << "PATH from " << source + 1 << " to " << target + 1 << "\n";
         std::stack<int> path_stack;
         int pi = target;
         while (abs(pi) != source)
@@ -183,20 +184,30 @@ void shortest_path(Digraph &residual, int source, int target)
 
         pi = path_stack.top();
         path_stack.pop();
-        std::cout << pi + 1;
+        // std::cout << pi + 1;
+        shortest_path_v.push_back(pi);
         while (!path_stack.empty())
         {
             pi = path_stack.top();
             path_stack.pop();
-            bool reversed = pi != abs(pi);
-            std::cout  << " (" << (reversed ? "-1" : "1") << ") " << pi + 1;
+            shortest_path_v.push_back(pi);
+            // bool reversed = pi != abs(pi);
+            // std::cout << " (" << (reversed ? "-1" : "1") << ") " << pi + 1;
         }
-        std::cout << "\n";
+        // std::cout << "\n";
     }
-    else
+    return std::make_pair(shortest_path_v, color);
+}
+
+void print_shortest_path(Digraph &digraph, std::vector<int> path, int source, int target)
+{
+    std::cout << "PATH from " << source + 1 << " to " << target + 1 << "\n";
+    for (const auto vertex : path)
     {
-        std::cout << "NO PATH FOUND\n";
+        bool reversed = vertex != abs(vertex);
+        std::cout << " (" << (reversed ? "-1" : "1") << ") " << vertex + 1;
     }
+    std::cout << "\n";
 }
 
 int max_integral_flow(Digraph &digraph, std::vector<std::tuple<size_t, size_t, int>> arcs,
@@ -206,7 +217,16 @@ int max_integral_flow(Digraph &digraph, std::vector<std::tuple<size_t, size_t, i
     {
         print_residual_capacities(digraph, arcs);
         Digraph residual = compute_residual(digraph);
-        shortest_path(residual, source, target);
+        std::vector<int> shortest_path_res, colors;
+        std::tie(shortest_path_res, colors) = shortest_path(residual, source, target);
+        if (colors[target] == white)
+        {
+            std::cout << "NO PATH FOUND\n";
+        }
+        else
+        {
+            print_shortest_path(digraph, shortest_path_res, source, target);
+        }
         //  ...
     }
     return 1;
