@@ -16,6 +16,7 @@ struct BundledArc
     int res_capacity;
     int capacity;
     int direction;
+    int index;
     BundledArc() : flow(0), res_capacity(0), capacity(0), direction(1) {}
 };
 

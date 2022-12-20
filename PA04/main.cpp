@@ -44,8 +44,8 @@ std::tuple<size_t, int, int, int> get_digraph_metadata(std::istream &is)
     is >> target;
     target -= 1;
 
-    std::cout << "Source: " << source + 1 << "\n";
-    std::cout << "Target: " << target + 1 << "\n";
+    // std::cout << "Source: " << source + 1 << "\n";
+    // std::cout << "Target: " << target + 1 << "\n";
 
     return std::make_tuple(n, m, source, target);
 }
@@ -69,6 +69,7 @@ std::vector<std::tuple<size_t, size_t, int>> get_digraph_arcs(std::istream &is, 
 Digraph build_digraph(typename boost::graph_traits<Digraph>::vertices_size_type n, size_t m, std::vector<std::tuple<size_t, size_t, int>> arcs)
 {
     Digraph digraph(n);
+    int i = 0;
     for (auto const &arc : arcs)
     {
         int u, v, capacity;
@@ -76,7 +77,9 @@ Digraph build_digraph(typename boost::graph_traits<Digraph>::vertices_size_type 
         Arc a;
         std::tie(a, std::ignore) = boost::add_edge(u, v, digraph);
         digraph[a].capacity = capacity;
-        std::cout << u + 1 << "->" << v + 1 << "(" << capacity << ")\n";
+        digraph[a].index = i;
+        i++;
+        // std::cout << u + 1 << "->" << v + 1 << "(" << capacity << ")\n";
     }
 
     return digraph;
@@ -204,7 +207,7 @@ std::pair<std::vector<int>, std::vector<int>> SPMC_bfs(Digraph &residual, int so
             // bool reversed = pi != abs(pi);
             // std::cout << pi << " ";
         }
-        std::cout << "\n";
+        // std::cout << "\n";
     }
     return std::make_pair(shortest_path_v, color);
 }
@@ -223,7 +226,7 @@ void update_flow_print_shortest_path(Digraph &digraph, std::vector<std::tuple<si
         previous = current;
         current = vertex;
 
-        int direction = previous >= 0 ? 1: -1;
+        int direction = previous >= 0 ? 1 : -1;
         bool reversed = direction == -1;
 
         if (vertex != source)
@@ -233,38 +236,40 @@ void update_flow_print_shortest_path(Digraph &digraph, std::vector<std::tuple<si
             // std::cout << "abs previous = " << abs(previous) << ", abscurrent = " << abs(current) << "\n";
             // std::cout << "reversed? = " << reversed << "\n";
 
-            int u, v, f;
-            for (size_t i = 0; i < arcs.size(); i++)
+            int u, v;
+            Arc a;
+            if (!reversed)
             {
-                std::tie(u, v, f) = arcs[i];
-                // std::cout << "u = " << u << ", v =  " << v << "\n";
-                bool matches_direct = !reversed && u == abs(previous) && v == abs(current);
-                bool matches_reversed = reversed && u == abs(current) && v == abs(previous);
-
-                if (matches_direct || matches_reversed)
-                {
-                    // std::cout << u << " (" << direction << ") " << v << ", i =" << i + 1 << "\n";
-                    arcs_indexes.push_back(reversed ? -i - 1 : i + 1);
-                    Arc a;
-                    std::tie(a, std::ignore) = boost::edge(u, v, digraph);
-                    int original_flow = digraph[a].flow;
-                    int residual_cap;
-                    if (reversed)
-                    {
-                        residual_cap = original_flow;
-                        // digraph[a].flow = original_flow - epslon;
-                    }
-                    else
-                    {
-                        residual_cap = digraph[a].capacity - original_flow;
-                        // digraph[a].flow = original_flow + epslon;
-                    }
-
-                    epslon = epslon < residual_cap ? epslon : residual_cap;
-
-                    break;
-                }
+                u = previous;
+                v = current;
             }
+            else
+            {
+                u = current;
+                v = previous;
+            }
+            u = abs(u);
+            v = abs(v);
+            std::tie(a, std::ignore) = boost::edge(u, v, digraph);
+
+            // std::cout << "u = " << u << ", v =  " << v << "\n";
+            int i = digraph[a].index;
+            // std::cout << u << " (" << direction << ") " << v << ", i =" << i + 1 << "\n";
+            arcs_indexes.push_back(reversed ? -i - 1 : i + 1);
+            std::tie(a, std::ignore) = boost::edge(u, v, digraph);
+            int original_flow = digraph[a].flow;
+            int residual_cap;
+            if (reversed)
+            {
+                residual_cap = original_flow;
+            }
+            else
+            {
+                residual_cap = digraph[a].capacity - original_flow;
+            }
+
+            epslon = epslon < residual_cap ? epslon : residual_cap;
+
             // std::cout << " (" << (reversed ? "-1" : "1") << ") " << vertex + 1;
         }
     }
